@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELOC Mortgage Payoff Calculator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); max-width: 900px; width: 100%; padding: 40px; }
+        h1 { text-align: center; margin-bottom: 10px; color: #333; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .section { padding: 20px; background: #f9f9f9; border-radius: 10px; }
+        .section h2 { color: #667eea; margin-bottom: 20px; font-size: 18px; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
+        input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; }
+        input:focus { outline: none; border-color: #667eea; }
+        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        button:hover { opacity: 0.9; }
+        .results { background: #f0f7ff; border-left: 4px solid #667eea; padding: 20px; border-radius: 6px; margin-top: 20px; }
+        .result-item { margin: 15px 0; }
+        .result-label { color: #666; font-size: 14px; }
+        .result-value { font-size: 24px; font-weight: bold; color: #667eea; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 HELOC Mortgage Payoff Calculator</h1>
+        <p class="subtitle">Analyze your velocity banking strategy</p>
+
+        <div class="grid">
+            <!-- Left: Inputs -->
+            <div class="section">
+                <h2>📊 Your Numbers</h2>
+
+                <div class="input-group">
+                    <label>Mortgage Balance ($)</label>
+                    <input type="number" id="mortgageBal" value="377157" />
+                </div>
+
+                <div class="input-group">
+                    <label>Mortgage Rate (%)</label>
+                    <input type="number" id="mortgageRate" value="3.25" step="0.01" />
+                </div>
+
+                <div class="input-group">
+                    <label>Monthly Payment ($)</label>
+                    <input type="number" id="mortgagePmt" value="1855" />
+                </div>
+
+                <div class="input-group">
+                    <label>Home Value ($)</label>
+                    <input type="number" id="homeValue" value="600000" />
+                </div>
+
+                <div class="input-group">
+                    <label>HELOC Rate (%)</label>
+                    <input type="number" id="helocRate" value="7.0" step="0.01" />
+                </div>
+
+                <div class="input-group">
+                    <label>Monthly Income ($)</label>
+                    <input type="number" id="monthlyIncome" value="10000" />
+                </div>
+
+                <div class="input-group">
+                    <label>Monthly Expenses ($)</label>
+                    <input type="number" id="livingExpenses" value="4000" />
+                </div>
+
+                <div class="input-group">
+                    <label>Monthly Debts ($)</label>
+                    <input type="number" id="monthlyDebts" value="800" />
+                </div>
+
+                <div class="input-group">
+                    <label>Savings to Apply Day 1 ($)</label>
+                    <input type="number" id="savings" value="25000" />
+                </div>
+
+                <button onclick="calculate()">Calculate Results</button>
+            </div>
+
+            <!-- Right: Results -->
+            <div class="section">
+                <h2>📈 Results</h2>
+                <div id="resultsContainer" class="hidden">
+                    <div class="result-item">
+                        <div class="result-label">Payoff Timeline</div>
+                        <div class="result-value" id="payoffTime">—</div>
+                    </div>
+
+                    <div class="result-item">
+                        <div class="result-label">Total Interest Paid</div>
+                        <div class="result-value" id="totalInterest">—</div>
+                    </div>
+
+                    <div class="result-item">
+                        <div class="result-label">Interest Saved vs Baseline</div>
+                        <div class="result-value" id="interestSaved">—</div>
+                    </div>
+
+                    <div class="result-item">
+                        <div class="result-label">Available Equity (80% LTV)</div>
+                        <div class="result-value" id="availableEquity">—</div>
+                    </div>
+
+                    <div class="result-item">
+                        <div class="result-label">Monthly Surplus</div>
+                        <div class="result-value" id="monthlySurplus">—</div>
+                    </div>
+
+                    <div class="result-item">
+                        <div class="result-label">Verdict</div>
+                        <div class="result-value" id="verdict">—</div>
+                    </div>
+                </div>
+
+                <div id="errorMessage" class="hidden" style="color: #d9534f; padding: 20px; background: #f2dede; border-radius: 6px;">
+                    ⚠️ Insufficient equity. You need more home equity to open a HELOC.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function fmt(n) {
+            return "$" + Math.round(n).toLocaleString();
+        }
+
+        function mo(m) {
+            return Math.floor(m / 12) + "y " + (m % 12) + "mo";
+        }
+
+        function simulate(params) {
+            const { mortgageBal, mortgageRate, mortgagePmt, homeValue, helocRate, monthlyIncome, livingExpenses, monthlyDebts, savings, redrawPct = 0.25 } = params;
+
+            const ltvLimit = 0.80;
+            const dailyRate = helocRate / 100 / 365;
+            const mr = mortgageRate / 100 / 12;
+
+            const maxDraw = Math.max(0, (homeValue * ltvLimit) - mortgageBal);
+            if (maxDraw < 5000) return null;
+
+            const initialDraw = maxDraw;
+            const savingsApplied = Math.min(savings, initialDraw);
+            let mBal = mortgageBal - initialDraw;
+            let hBal = initialDraw - savingsApplied;
+
+            let totalMInt = 0, totalHInt = 0;
+            let month = 0;
+
+            function oneMonth(hb, mp, dp) {
+                let bal = hb + mp + dp;
+                let cashBuf = 0, interest = 0;
+                const half = monthlyIncome / 2;
+                for (let day = 1; day <= 30; day++) {
+                    if (day === 1 || day === 15) {
+                        const pay = Math.min(bal, half);
+                        bal -= pay;
+                        cashBuf += (half - pay);
+                    }
+                    if (day === 25) {
+                        const fc = Math.min(cashBuf, livingExpenses);
+                        cashBuf -= fc;
+                        bal += (livingExpenses - fc);
+                        bal = Math.max(0, bal);
+                    }
+                    interest += Math.max(0, bal) * dailyRate;
+                }
+                bal = Math.max(0, bal - cashBuf);
+                return { endBal: bal, interest };
+            }
+
+            while ((mBal > 0.01 || hBal > 0.01) && month < 600) {
+                month++;
+                const mp = mBal > 0 ? mortgagePmt : 0;
+                const dp = monthlyDebts;
+                const r = oneMonth(hBal, mp, dp);
+                totalHInt += r.interest;
+                hBal = r.endBal;
+                if (mBal > 0) {
+                    const mInt = mBal * mr;
+                    totalMInt += mInt;
+                    mBal = Math.max(0, mBal + mInt - mp);
+                }
+                if (hBal < 500 && mBal > 1000) {
+                    const ceiling = (homeValue * ltvLimit) - mBal;
+                    const draw = Math.min(ceiling * redrawPct, mBal);
+                    if (draw > 1000) {
+                        mBal -= draw;
+                        hBal = draw;
+                    }
+                }
+            }
+
+            // Baseline
+            let bMBal = mortgageBal, bMo = 0, bMInt = 0;
+            while (bMBal > 0.01 && bMo < 600) {
+                bMo++;
+                const i = bMBal * mr;
+                bMInt += i;
+                bMBal = Math.max(0, bMBal + i - mortgagePmt);
+            }
+
+            return {
+                months: month,
+                totalMInt,
+                totalHInt,
+                total: totalMInt + totalHInt,
+                baseline: { months: bMo, totalInt: bMInt },
+                interestSavedVsBaseline: bMInt - (totalMInt + totalHInt),
+            };
+        }
+
+        function calculate() {
+            const mortgageBal = parseFloat(document.getElementById('mortgageBal').value);
+            const mortgageRate = parseFloat(document.getElementById('mortgageRate').value);
+            const mortgagePmt = parseFloat(document.getElementById('mortgagePmt').value);
+            const homeValue = parseFloat(document.getElementById('homeValue').value);
+            const helocRate = parseFloat(document.getElementById('helocRate').value);
+            const monthlyIncome = parseFloat(document.getElementById('monthlyIncome').value);
+            const livingExpenses = parseFloat(document.getElementById('livingExpenses').value);
+            const monthlyDebts = parseFloat(document.getElementById('monthlyDebts').value);
+            const savings = parseFloat(document.getElementById('savings').value);
+
+            const result = simulate({ mortgageBal, mortgageRate, mortgagePmt, homeValue, helocRate, monthlyIncome, livingExpenses, monthlyDebts, savings });
+
+            const resultsContainer = document.getElementById('resultsContainer');
+            const errorMessage = document.getElementById('errorMessage');
+
+            if (!result) {
+                resultsContainer.classList.add('hidden');
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            errorMessage.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+
+            document.getElementById('payoffTime').textContent = mo(result.months);
+            document.getElementById('totalInterest').textContent = fmt(result.total);
+            document.getElementById('interestSaved').textContent = fmt(result.interestSavedVsBaseline);
+
+            const availableEquity = Math.max(0, homeValue * 0.8 - mortgageBal);
+            document.getElementById('availableEquity').textContent = fmt(availableEquity);
+
+            const monthlySurplus = monthlyIncome - livingExpenses - mortgagePmt - monthlyDebts;
+            document.getElementById('monthlySurplus').textContent = fmt(monthlySurplus);
+
+            let verdict = "Limited Benefit";
+            if (result.interestSavedVsBaseline > 50000) verdict = "⚡ Highly Recommended";
+            else if (result.interestSavedVsBaseline > 20000) verdict = "✓ Recommended";
+            else if (result.interestSavedVsBaseline > 5000) verdict = "~ Marginal Benefit";
+
+            document.getElementById('verdict').textContent = verdict;
+        }
+
+        // Auto-calculate on load
+        window.addEventListener('load', calculate);
+    </script>
+</body>
+</html>
