@@ -1,266 +1,394 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HELOC Mortgage Payoff Calculator</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .container { background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); max-width: 900px; width: 100%; padding: 40px; }
-        h1 { text-align: center; margin-bottom: 10px; color: #333; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .section { padding: 20px; background: #f9f9f9; border-radius: 10px; }
-        .section h2 { color: #667eea; margin-bottom: 20px; font-size: 18px; }
-        .input-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
-        input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; }
-        input:focus { outline: none; border-color: #667eea; }
-        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
-        button:hover { opacity: 0.9; }
-        .results { background: #f0f7ff; border-left: 4px solid #667eea; padding: 20px; border-radius: 6px; margin-top: 20px; }
-        .result-item { margin: 15px 0; }
-        .result-label { color: #666; font-size: 14px; }
-        .result-value { font-size: 24px; font-weight: bold; color: #667eea; }
-        .hidden { display: none; }
-    </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HELOC Mortgage Payoff Calculator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0e1a; color: #e8f0fe; font-family: Georgia, serif; }
+  input[type=range] { width: 100%; cursor: pointer; height: 4px; accent-color: #00d4ff; }
+  input[type=number] { -moz-appearance: textfield; }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #111827; }
+  ::-webkit-scrollbar-thumb { background: #1e2d45; border-radius: 3px; }
+  table { border-collapse: collapse; width: 100%; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>💰 HELOC Mortgage Payoff Calculator</h1>
-        <p class="subtitle">Analyze your velocity banking strategy</p>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
 
-        <div class="grid">
-            <!-- Left: Inputs -->
-            <div class="section">
-                <h2>📊 Your Numbers</h2>
+const C = {
+  bg: "#0a0e1a", surface: "#111827", surfaceAlt: "#1a2235",
+  border: "#1e2d45", accent: "#00d4ff", accentDim: "#0099bb",
+  accentGlow: "rgba(0,212,255,0.12)", green: "#00e5a0",
+  greenDim: "rgba(0,229,160,0.10)", red: "#ff4d6d",
+  redDim: "rgba(255,77,109,0.10)", amber: "#ffb700",
+  amberDim: "rgba(255,183,0,0.10)", text: "#e8f0fe",
+  textMid: "#8899bb", textDim: "#4a5568",
+};
 
-                <div class="input-group">
-                    <label>Mortgage Balance ($)</label>
-                    <input type="number" id="mortgageBal" value="377157" />
-                </div>
+function simulate(p) {
+  const { mortgageBal, mortgageRate, mortgagePmt, homeValue, helocRate,
+          monthlyIncome, livingExpenses, monthlyDebts, savings, redrawPct } = p;
+  const ltvLimit = 0.80;
+  const dailyRate = helocRate / 100 / 365;
+  const mr = mortgageRate / 100 / 12;
+  const maxDraw = Math.max(0, homeValue * ltvLimit - mortgageBal);
+  if (maxDraw < 5000) return null;
+  const initialDraw = maxDraw;
+  const savingsApplied = Math.min(savings, initialDraw);
+  let mBal = mortgageBal - initialDraw;
+  let hBal = initialDraw - savingsApplied;
+  let totalMInt = 0, totalHInt = 0, month = 0;
+  const yearData = [], cycleLog = [{ cycle: 1, month: 0, draw: initialDraw, mortgageAfter: mBal }];
+  let yrMInt = 0, yrHInt = 0, cycleCount = 1;
 
-                <div class="input-group">
-                    <label>Mortgage Rate (%)</label>
-                    <input type="number" id="mortgageRate" value="3.25" step="0.01" />
-                </div>
+  function oneMonth(hb, mp, dp) {
+    let bal = hb + mp + dp, cashBuf = 0, interest = 0;
+    const half = monthlyIncome / 2;
+    for (let day = 1; day <= 30; day++) {
+      if (day === 1 || day === 15) {
+        const pay = Math.min(bal, half); bal -= pay; cashBuf += (half - pay);
+      }
+      if (day === 25) {
+        const fc = Math.min(cashBuf, livingExpenses);
+        cashBuf -= fc; bal += (livingExpenses - fc); bal = Math.max(0, bal);
+      }
+      interest += Math.max(0, bal) * dailyRate;
+    }
+    return { endBal: Math.max(0, bal - cashBuf), interest };
+  }
 
-                <div class="input-group">
-                    <label>Monthly Payment ($)</label>
-                    <input type="number" id="mortgagePmt" value="1855" />
-                </div>
+  while ((mBal > 0.01 || hBal > 0.01) && month < 600) {
+    month++;
+    const mp = mBal > 0 ? mortgagePmt : 0;
+    const r = oneMonth(hBal, mp, monthlyDebts);
+    totalHInt += r.interest; yrHInt += r.interest; hBal = r.endBal;
+    if (mBal > 0) {
+      const mInt = mBal * mr; totalMInt += mInt; yrMInt += mInt;
+      mBal = Math.max(0, mBal + mInt - mp);
+    }
+    if (hBal < 500 && mBal > 1000) {
+      const ceiling = homeValue * ltvLimit - mBal;
+      const draw = Math.min(ceiling * redrawPct, mBal);
+      if (draw > 1000) { mBal -= draw; hBal = draw; cycleCount++; cycleLog.push({ cycle: cycleCount, month, draw, mortgageAfter: mBal }); }
+    }
+    if (month % 12 === 0) {
+      yearData.push({ year: month / 12, mBal, hBal, yrMInt, yrHInt, yrTotal: yrMInt + yrHInt, cumTotal: totalMInt + totalHInt, liquidity: Math.max(0, homeValue * ltvLimit - mBal - hBal) });
+      yrMInt = 0; yrHInt = 0;
+    }
+  }
+  if (month % 12 !== 0) yearData.push({ year: Math.ceil(month / 12), mBal: 0, hBal: 0, yrMInt, yrHInt, yrTotal: yrMInt + yrHInt, cumTotal: totalMInt + totalHInt, liquidity: homeValue * ltvLimit, partial: true });
 
-                <div class="input-group">
-                    <label>Home Value ($)</label>
-                    <input type="number" id="homeValue" value="600000" />
-                </div>
+  let bMBal = mortgageBal, bMo = 0, bMInt = 0;
+  while (bMBal > 0.01 && bMo < 600) { bMo++; const i = bMBal * mr; bMInt += i; bMBal = Math.max(0, bMBal + i - mortgagePmt); }
 
-                <div class="input-group">
-                    <label>HELOC Rate (%)</label>
-                    <input type="number" id="helocRate" value="7.0" step="0.01" />
-                </div>
+  let dMBal = mortgageBal - savings, dMo = 0, dMInt = 0;
+  const extra = Math.max(0, monthlyIncome - livingExpenses - mortgagePmt - monthlyDebts);
+  while (dMBal > 0.01 && dMo < 600) { dMo++; const i = dMBal * mr; dMInt += i; dMBal = Math.max(0, dMBal + i - Math.min(dMBal + i, mortgagePmt + extra)); }
 
-                <div class="input-group">
-                    <label>Monthly Income ($)</label>
-                    <input type="number" id="monthlyIncome" value="10000" />
-                </div>
+  return { months: month, totalMInt, totalHInt, total: totalMInt + totalHInt, yearData, cycleLog, cycleCount, initialDraw, maxDraw, savingsApplied, baseline: { months: bMo, totalInt: bMInt }, direct: { months: dMo, totalInt: dMInt }, interestSavedVsBaseline: bMInt - (totalMInt + totalHInt), extraCostVsDirect: (totalMInt + totalHInt) - dMInt };
+}
 
-                <div class="input-group">
-                    <label>Monthly Expenses ($)</label>
-                    <input type="number" id="livingExpenses" value="4000" />
-                </div>
+const fmt = n => "$" + Math.round(n).toLocaleString();
+const mo = m => `${Math.floor(m/12)}y ${m%12}mo`;
 
-                <div class="input-group">
-                    <label>Monthly Debts ($)</label>
-                    <input type="number" id="monthlyDebts" value="800" />
-                </div>
+function Label({ children }) {
+  return <div style={{ fontSize: 11, color: C.textMid, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "monospace", marginBottom: 5 }}>{children}</div>;
+}
 
-                <div class="input-group">
-                    <label>Savings to Apply Day 1 ($)</label>
-                    <input type="number" id="savings" value="25000" />
-                </div>
-
-                <button onclick="calculate()">Calculate Results</button>
-            </div>
-
-            <!-- Right: Results -->
-            <div class="section">
-                <h2>📈 Results</h2>
-                <div id="resultsContainer" class="hidden">
-                    <div class="result-item">
-                        <div class="result-label">Payoff Timeline</div>
-                        <div class="result-value" id="payoffTime">—</div>
-                    </div>
-
-                    <div class="result-item">
-                        <div class="result-label">Total Interest Paid</div>
-                        <div class="result-value" id="totalInterest">—</div>
-                    </div>
-
-                    <div class="result-item">
-                        <div class="result-label">Interest Saved vs Baseline</div>
-                        <div class="result-value" id="interestSaved">—</div>
-                    </div>
-
-                    <div class="result-item">
-                        <div class="result-label">Available Equity (80% LTV)</div>
-                        <div class="result-value" id="availableEquity">—</div>
-                    </div>
-
-                    <div class="result-item">
-                        <div class="result-label">Monthly Surplus</div>
-                        <div class="result-value" id="monthlySurplus">—</div>
-                    </div>
-
-                    <div class="result-item">
-                        <div class="result-label">Verdict</div>
-                        <div class="result-value" id="verdict">—</div>
-                    </div>
-                </div>
-
-                <div id="errorMessage" class="hidden" style="color: #d9534f; padding: 20px; background: #f2dede; border-radius: 6px;">
-                    ⚠️ Insufficient equity. You need more home equity to open a HELOC.
-                </div>
-            </div>
-        </div>
+function SliderInput({ label, value, min, max, step, onChange, format, hint }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+        <Label>{label}</Label>
+        <span style={{ fontSize: 13, color: C.accent, fontFamily: "monospace", fontWeight: 700 }}>{format(value)}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} />
+      {hint && <div style={{ fontSize: 10, color: C.textDim, marginTop: 3 }}>{hint}</div>}
     </div>
+  );
+}
 
-    <script>
-        function fmt(n) {
-            return "$" + Math.round(n).toLocaleString();
-        }
+function NumInput({ label, value, onChange }) {
+  const [raw, setRaw] = useState(String(value));
+  useEffect(() => setRaw(String(value)), [value]);
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <Label>{label}</Label>
+      <div style={{ display: "flex", alignItems: "center", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, overflow: "hidden" }}>
+        <span style={{ padding: "8px 10px", color: C.textDim, fontFamily: "monospace", fontSize: 13, borderRight: `1px solid ${C.border}` }}>$</span>
+        <input type="number" value={raw}
+          onChange={e => { setRaw(e.target.value); const n = Number(e.target.value); if (!isNaN(n) && n >= 0) onChange(n); }}
+          style={{ flex: 1, background: "transparent", border: "none", outline: "none", padding: "8px 10px", color: C.text, fontFamily: "monospace", fontSize: 14 }} />
+      </div>
+    </div>
+  );
+}
 
-        function mo(m) {
-            return Math.floor(m / 12) + "y " + (m % 12) + "mo";
-        }
+function Card({ label, value, sub, color = C.accent }) {
+  return (
+    <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderTop: `2px solid ${color}`, borderRadius: 10, padding: "14px 16px" }}>
+      <div style={{ fontSize: 10, color: C.textMid, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "monospace", marginBottom: 5 }}>{label}</div>
+      <div style={{ fontSize: 20, fontWeight: 800, color, fontFamily: "monospace" }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, color: C.textDim, marginTop: 3 }}>{sub}</div>}
+    </div>
+  );
+}
 
-        function simulate(params) {
-            const { mortgageBal, mortgageRate, mortgagePmt, homeValue, helocRate, monthlyIncome, livingExpenses, monthlyDebts, savings, redrawPct = 0.25 } = params;
+function Tab({ label, active, onClick }) {
+  return (
+    <button onClick={onClick} style={{ flex: 1, padding: "8px 0", borderRadius: 6, border: "none", cursor: "pointer", fontFamily: "monospace", fontSize: 10, letterSpacing: "0.05em", textTransform: "uppercase", background: active ? C.accent : "transparent", color: active ? C.bg : C.textMid, fontWeight: active ? 700 : 400, transition: "all 0.15s" }}>
+      {label}
+    </button>
+  );
+}
 
-            const ltvLimit = 0.80;
-            const dailyRate = helocRate / 100 / 365;
-            const mr = mortgageRate / 100 / 12;
+function Section({ title, children }) {
+  return (
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 18 }}>
+      <div style={{ fontSize: 10, color: C.accent, fontFamily: "monospace", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 14, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>// {title}</div>
+      {children}
+    </div>
+  );
+}
 
-            const maxDraw = Math.max(0, (homeValue * ltvLimit) - mortgageBal);
-            if (maxDraw < 5000) return null;
+function App() {
+  const [mortgageBal, setMortgageBal] = useState(377157);
+  const [mortgageRate, setMortgageRate] = useState(3.25);
+  const [mortgagePmt, setMortgagePmt] = useState(1855);
+  const [homeValue, setHomeValue] = useState(600000);
+  const [helocRate, setHelocRate] = useState(7.0);
+  const [monthlyIncome, setMonthlyIncome] = useState(10000);
+  const [livingExpenses, setLivingExpenses] = useState(4000);
+  const [monthlyDebts, setMonthlyDebts] = useState(800);
+  const [savings, setSavings] = useState(25000);
+  const [redrawPct, setRedrawPct] = useState(0.25);
+  const [tab, setTab] = useState("overview");
 
-            const initialDraw = maxDraw;
-            const savingsApplied = Math.min(savings, initialDraw);
-            let mBal = mortgageBal - initialDraw;
-            let hBal = initialDraw - savingsApplied;
+  const result = simulate({ mortgageBal, mortgageRate, mortgagePmt, homeValue, helocRate, monthlyIncome, livingExpenses, monthlyDebts, savings, redrawPct });
+  const availableEquity = Math.max(0, homeValue * 0.8 - mortgageBal);
+  const surplus = monthlyIncome - livingExpenses - mortgagePmt - monthlyDebts;
 
-            let totalMInt = 0, totalHInt = 0;
-            let month = 0;
+  const verdict = !result ? "no_equity"
+    : result.interestSavedVsBaseline > 80000 ? "strongly_yes"
+    : result.interestSavedVsBaseline > 30000 ? "yes"
+    : result.interestSavedVsBaseline > 5000 ? "maybe" : "no";
 
-            function oneMonth(hb, mp, dp) {
-                let bal = hb + mp + dp;
-                let cashBuf = 0, interest = 0;
-                const half = monthlyIncome / 2;
-                for (let day = 1; day <= 30; day++) {
-                    if (day === 1 || day === 15) {
-                        const pay = Math.min(bal, half);
-                        bal -= pay;
-                        cashBuf += (half - pay);
-                    }
-                    if (day === 25) {
-                        const fc = Math.min(cashBuf, livingExpenses);
-                        cashBuf -= fc;
-                        bal += (livingExpenses - fc);
-                        bal = Math.max(0, bal);
-                    }
-                    interest += Math.max(0, bal) * dailyRate;
-                }
-                bal = Math.max(0, bal - cashBuf);
-                return { endBal: bal, interest };
-            }
+  const vc = { strongly_yes: { label: "HIGHLY RECOMMENDED", color: C.green, bg: C.greenDim, icon: "⚡" }, yes: { label: "RECOMMENDED", color: C.green, bg: C.greenDim, icon: "✓" }, maybe: { label: "MARGINAL BENEFIT", color: C.amber, bg: C.amberDim, icon: "~" }, no: { label: "LIMITED BENEFIT", color: C.red, bg: C.redDim, icon: "✗" }, no_equity: { label: "INSUFFICIENT EQUITY", color: C.textDim, bg: "#111", icon: "—" } }[verdict];
 
-            while ((mBal > 0.01 || hBal > 0.01) && month < 600) {
-                month++;
-                const mp = mBal > 0 ? mortgagePmt : 0;
-                const dp = monthlyDebts;
-                const r = oneMonth(hBal, mp, dp);
-                totalHInt += r.interest;
-                hBal = r.endBal;
-                if (mBal > 0) {
-                    const mInt = mBal * mr;
-                    totalMInt += mInt;
-                    mBal = Math.max(0, mBal + mInt - mp);
-                }
-                if (hBal < 500 && mBal > 1000) {
-                    const ceiling = (homeValue * ltvLimit) - mBal;
-                    const draw = Math.min(ceiling * redrawPct, mBal);
-                    if (draw > 1000) {
-                        mBal -= draw;
-                        hBal = draw;
-                    }
-                }
-            }
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "Georgia, serif", paddingBottom: 60 }}>
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg,#0a0e1a,#0d1929,#0a1520)", borderBottom: `1px solid ${C.border}`, padding: "28px 24px 24px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -60, right: -60, width: 280, height: 280, background: `radial-gradient(circle,${C.accentGlow},transparent 70%)`, pointerEvents: "none" }} />
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ fontSize: 10, color: C.accentDim, fontFamily: "monospace", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 6 }}>Velocity Banking Analysis</div>
+          <h1 style={{ fontSize: 26, fontWeight: 400, color: C.text, margin: "0 0 5px", letterSpacing: "-0.02em" }}>HELOC <span style={{ color: C.accent, fontWeight: 700 }}>Mortgage Payoff</span> Calculator</h1>
+          <p style={{ color: C.textMid, fontSize: 13, margin: 0, fontFamily: "monospace" }}>Enter your numbers to see if velocity banking makes sense for you.</p>
+        </div>
+      </div>
 
-            // Baseline
-            let bMBal = mortgageBal, bMo = 0, bMInt = 0;
-            while (bMBal > 0.01 && bMo < 600) {
-                bMo++;
-                const i = bMBal * mr;
-                bMInt += i;
-                bMBal = Math.max(0, bMBal + i - mortgagePmt);
-            }
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 24 }}>
 
-            return {
-                months: month,
-                totalMInt,
-                totalHInt,
-                total: totalMInt + totalHInt,
-                baseline: { months: bMo, totalInt: bMInt },
-                interestSavedVsBaseline: bMInt - (totalMInt + totalHInt),
-            };
-        }
+          {/* Inputs */}
+          <div>
+            <Section title="Mortgage Details">
+              <NumInput label="Current Mortgage Balance" value={mortgageBal} onChange={setMortgageBal} />
+              <SliderInput label="Mortgage Rate" value={mortgageRate} min={2} max={9} step={0.05} onChange={setMortgageRate} format={v => v.toFixed(2) + "%"} hint="US 30yr avg currently ~6.8%" />
+              <NumInput label="Monthly Mortgage Payment" value={mortgagePmt} onChange={setMortgagePmt} />
+              <NumInput label="Home Value (Current)" value={homeValue} onChange={setHomeValue} />
+            </Section>
 
-        function calculate() {
-            const mortgageBal = parseFloat(document.getElementById('mortgageBal').value);
-            const mortgageRate = parseFloat(document.getElementById('mortgageRate').value);
-            const mortgagePmt = parseFloat(document.getElementById('mortgagePmt').value);
-            const homeValue = parseFloat(document.getElementById('homeValue').value);
-            const helocRate = parseFloat(document.getElementById('helocRate').value);
-            const monthlyIncome = parseFloat(document.getElementById('monthlyIncome').value);
-            const livingExpenses = parseFloat(document.getElementById('livingExpenses').value);
-            const monthlyDebts = parseFloat(document.getElementById('monthlyDebts').value);
-            const savings = parseFloat(document.getElementById('savings').value);
+            <Section title="HELOC & Cash Flow">
+              <SliderInput label="HELOC Interest Rate" value={helocRate} min={5} max={13} step={0.25} onChange={setHelocRate} format={v => v.toFixed(2) + "%"} hint="Typically Prime rate + 0–2%" />
+              <NumInput label="Monthly Take-Home Income" value={monthlyIncome} onChange={setMonthlyIncome} />
+              <NumInput label="Monthly Living Expenses" value={livingExpenses} onChange={setLivingExpenses} />
+              <NumInput label="Other Monthly Debts" value={monthlyDebts} onChange={setMonthlyDebts} />
+              <NumInput label="Savings to Apply Day 1" value={savings} onChange={setSavings} />
+            </Section>
 
-            const result = simulate({ mortgageBal, mortgageRate, mortgagePmt, homeValue, helocRate, monthlyIncome, livingExpenses, monthlyDebts, savings });
+            <Section title="Strategy Setting">
+              <SliderInput label="Equity Drawn Per Cycle" value={redrawPct} min={0.1} max={1.0} step={0.05} onChange={setRedrawPct} format={v => Math.round(v * 100) + "%"} hint="25% = sweet spot | 100% = maximum aggression" />
+              <div style={{ background: C.bg, borderRadius: 8, padding: 12, marginTop: 6 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 10, color: C.textDim, fontFamily: "monospace", marginBottom: 3 }}>Available Equity</div>
+                    <div style={{ fontSize: 17, color: C.accent, fontFamily: "monospace", fontWeight: 700 }}>{fmt(availableEquity)}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: C.textDim, fontFamily: "monospace", marginBottom: 3 }}>Monthly Surplus</div>
+                    <div style={{ fontSize: 17, fontFamily: "monospace", fontWeight: 700, color: surplus > 0 ? C.green : C.red }}>{fmt(surplus)}</div>
+                  </div>
+                </div>
+              </div>
+            </Section>
+          </div>
 
-            const resultsContainer = document.getElementById('resultsContainer');
-            const errorMessage = document.getElementById('errorMessage');
+          {/* Results */}
+          <div>
+            {/* Verdict */}
+            <div style={{ background: vc.bg, border: `1px solid ${vc.color}44`, borderLeft: `4px solid ${vc.color}`, borderRadius: 10, padding: "12px 18px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 26 }}>{vc.icon}</span>
+              <div>
+                <div style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700, color: vc.color, letterSpacing: "0.1em" }}>VELOCITY BANKING: {vc.label}</div>
+                {result && <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>
+                  Saves {fmt(result.interestSavedVsBaseline)} vs doing nothing • Costs {result.extraCostVsDirect > 0 ? fmt(result.extraCostVsDirect) + " more" : fmt(Math.abs(result.extraCostVsDirect)) + " less"} than locking all cash in mortgage
+                </div>}
+              </div>
+            </div>
 
-            if (!result) {
-                resultsContainer.classList.add('hidden');
-                errorMessage.classList.remove('hidden');
-                return;
-            }
+            {result && <>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 10 }}>
+                <Card label="Payoff Timeline" value={mo(result.months)} sub={`vs ${mo(result.baseline.months)} doing nothing`} color={C.green} />
+                <Card label="Total Interest" value={fmt(result.total)} sub={`Mtg: ${fmt(result.totalMInt)} + HELOC: ${fmt(result.totalHInt)}`} color={C.amber} />
+                <Card label="Interest Saved" value={fmt(result.interestSavedVsBaseline)} sub="vs 30yr no extra payments" color={C.accent} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 20 }}>
+                <Card label="HELOC Cycles" value={result.cycleCount} sub="Times equity drawn onto mortgage" color={C.textMid} />
+                <Card label="Initial Draw" value={fmt(result.initialDraw)} sub={`HELOC starts at ${fmt(result.initialDraw - result.savingsApplied)}`} color={C.textMid} />
+                <Card label="vs Direct Principal" value={(result.extraCostVsDirect > 0 ? "+" : "-") + fmt(Math.abs(result.extraCostVsDirect))} sub={result.extraCostVsDirect > 0 ? "extra for full liquidity" : "cheaper + liquidity"} color={result.extraCostVsDirect > 0 ? C.amber : C.green} />
+              </div>
 
-            errorMessage.classList.add('hidden');
-            resultsContainer.classList.remove('hidden');
+              {/* Tabs */}
+              <div style={{ display: "flex", gap: 2, marginBottom: 14, background: C.surface, padding: 4, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                {["overview","year-by-year","cycles","comparison"].map(t => <Tab key={t} label={t.replace("-"," ")} active={tab===t} onClick={() => setTab(t)} />)}
+              </div>
 
-            document.getElementById('payoffTime').textContent = mo(result.months);
-            document.getElementById('totalInterest').textContent = fmt(result.total);
-            document.getElementById('interestSaved').textContent = fmt(result.interestSavedVsBaseline);
+              {/* Overview */}
+              {tab === "overview" && (
+                <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, overflow: "hidden" }}>
+                  <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, fontSize: 11, color: C.textMid, fontFamily: "monospace" }}>How velocity banking works with your numbers</div>
+                  <div style={{ padding: 18 }}>
+                    {[
+                      { step: "Day 0", color: C.accent, text: `Draw ${fmt(result.initialDraw)} HELOC → mortgage drops to ${fmt(mortgageBal - result.initialDraw)}. Apply ${fmt(result.savingsApplied)} savings → HELOC starts at ${fmt(result.initialDraw - result.savingsApplied)}.` },
+                      { step: "Monthly", color: C.green, text: `All income (${fmt(monthlyIncome)}/mo) flows INTO HELOC on paydays. Bills flow out. Net HELOC paydown: ~${fmt(surplus)}/mo.` },
+                      { step: "Interest", color: C.amber, text: `HELOC interest starts at ~${fmt((result.initialDraw - result.savingsApplied) * (helocRate/100/12))}/mo and drops every month as balance falls. Mortgage interest drops too.` },
+                      { step: "Redraw", color: C.accent, text: `When HELOC hits $0 (~every ${Math.round(result.months / result.cycleCount)} months), draw ${Math.round(redrawPct*100)}% of available equity and apply it to the mortgage. Repeat ${result.cycleCount - 1} more time${result.cycleCount > 2 ? "s" : ""}.` },
+                      { step: "Payoff", color: C.green, text: `Mortgage gone in ${mo(result.months)}. Saved ${fmt(result.interestSavedVsBaseline)} vs doing nothing. Full liquidity maintained throughout.` },
+                    ].map(({ step, color, text }) => (
+                      <div key={step} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+                        <div style={{ minWidth: 58, height: 22, background: color + "22", border: `1px solid ${color}44`, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "monospace", fontSize: 9, color, letterSpacing: "0.05em", textTransform: "uppercase" }}>{step}</div>
+                        <div style={{ fontSize: 12, color: C.textMid, lineHeight: 1.6, paddingTop: 2 }}>{text}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ padding: "10px 16px", background: C.bg, borderTop: `1px solid ${C.border}`, fontSize: 10, color: C.textDim, fontFamily: "monospace" }}>
+                    Assumes 80% LTV HELOC • Income deposited 1st & 15th • CC paid day 25 • All income/expenses flow through HELOC
+                  </div>
+                </div>
+              )}
 
-            const availableEquity = Math.max(0, homeValue * 0.8 - mortgageBal);
-            document.getElementById('availableEquity').textContent = fmt(availableEquity);
+              {/* Year by Year */}
+              {tab === "year-by-year" && (
+                <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, overflow: "auto" }}>
+                  <table>
+                    <thead>
+                      <tr style={{ background: C.bg }}>
+                        {["Year","Mortgage","HELOC Bal","Yr Mtg Int","Yr HELOC Int","Yr Total","Liquidity"].map(h => (
+                          <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontSize: 9, color: C.textDim, fontFamily: "monospace", letterSpacing: "0.05em", textTransform: "uppercase", fontWeight: 400, whiteSpace: "nowrap" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.yearData.map((y, i) => (
+                        <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
+                          <td style={{ padding: "9px 12px", fontFamily: "monospace", fontSize: 12, color: C.textMid }}>{y.partial ? `Yr ${y.year}*` : `Year ${y.year}`}</td>
+                          <td style={{ padding: "9px 12px", fontFamily: "monospace", fontSize: 12, color: C.text }}>{y.mBal > 0 ? fmt(y.mBal) : <span style={{ color: C.green }}>✓ PAID</span>}</td>
+                          <td style={{ padding: "9px 12px", fontFamily: "monospace", fontSize: 12, color: C.text }}>{fmt(y.hBal)}</td>
+                          <td style={{ padding: "9px 12px", fontFamily: "monospace", fontSize: 12, color: C.amber }}>{fmt(y.yrMInt)}</td>
+                          <td style={{ padding: "9px 12px", fontFamily: "monospace", fontSize: 12, color: y.yrHInt > y.yrMInt ? C.red : C.accent }}>{fmt(y.yrHInt)}</td>
+                          <td style={{ padding: "9px 12px", fontFamily: "monospace", fontSize: 12, color: C.textMid }}>{fmt(y.yrTotal)}</td>
+                          <td style={{ padding: "9px 12px", fontFamily: "monospace", fontSize: 12, color: C.green }}>{fmt(y.liquidity)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div style={{ padding: "8px 12px", borderTop: `1px solid ${C.border}`, fontSize: 10, color: C.textDim, fontFamily: "monospace" }}>* Partial year | HELOC Int in red = exceeds mortgage interest saved that year</div>
+                </div>
+              )}
 
-            const monthlySurplus = monthlyIncome - livingExpenses - mortgagePmt - monthlyDebts;
-            document.getElementById('monthlySurplus').textContent = fmt(monthlySurplus);
+              {/* Cycles */}
+              {tab === "cycles" && (
+                <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, overflow: "hidden" }}>
+                  <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, fontSize: 11, color: C.textMid, fontFamily: "monospace" }}>{result.cycleCount} cycle{result.cycleCount > 1 ? "s" : ""} — each redraw slams equity onto the mortgage</div>
+                  {result.cycleLog.map((c, i) => (
+                    <div key={i} style={{ padding: "14px 16px", borderBottom: i < result.cycleLog.length - 1 ? `1px solid ${C.border}` : "none", display: "flex", gap: 14, alignItems: "flex-start" }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: i === 0 ? C.accentGlow : C.surfaceAlt, border: `2px solid ${i === 0 ? C.accent : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: i === 0 ? C.accent : C.textMid }}>{c.cycle}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                          <span style={{ fontFamily: "monospace", fontSize: 12, color: C.text }}>{c.month === 0 ? "Day 0 — Initial Setup" : `Month ${c.month} — Redraw`}</span>
+                          <span style={{ fontFamily: "monospace", fontSize: 13, color: C.accent, fontWeight: 700 }}>{fmt(c.draw)}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: C.textMid }}>
+                          {c.month === 0 ? `Drew full ${fmt(c.draw)} HELOC → mortgage now ${fmt(c.mortgageAfter)}. Applied ${fmt(result.savingsApplied)} savings → HELOC starts at ${fmt(c.draw - result.savingsApplied)}.` : `Drew ${Math.round(redrawPct*100)}% of available equity → mortgage drops to ${fmt(c.mortgageAfter)}.`}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-            let verdict = "Limited Benefit";
-            if (result.interestSavedVsBaseline > 50000) verdict = "⚡ Highly Recommended";
-            else if (result.interestSavedVsBaseline > 20000) verdict = "✓ Recommended";
-            else if (result.interestSavedVsBaseline > 5000) verdict = "~ Marginal Benefit";
+              {/* Comparison */}
+              {tab === "comparison" && (
+                <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, overflow: "hidden" }}>
+                  <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, fontSize: 11, color: C.textMid, fontFamily: "monospace" }}>Three strategies side by side</div>
+                  {[
+                    { label: "30yr — Do Nothing Extra", payoff: mo(result.baseline.months), mInt: result.baseline.totalInt, hInt: 0, total: result.baseline.totalInt, liquidity: "Full (no extra payments)", color: C.textMid, note: "Pay maximum interest, no payoff acceleration" },
+                    { label: `Velocity Banking (${Math.round(redrawPct*100)}% redraw)`, payoff: mo(result.months), mInt: result.totalMInt, hInt: result.totalHInt, total: result.total, liquidity: fmt(homeValue * 0.8) + " accessible at payoff", color: C.accent, note: "Best balance: payoff speed + interest savings + liquidity", highlight: true },
+                    { label: "Direct Extra Principal", payoff: mo(result.direct.months), mInt: result.direct.totalInt, hInt: 0, total: result.direct.totalInt, liquidity: "$0 — all surplus locked in mortgage", color: C.amber, note: "Cheapest total interest but zero liquidity" },
+                  ].map((s, i) => (
+                    <div key={i} style={{ padding: "16px 18px", borderBottom: i < 2 ? `1px solid ${C.border}` : "none", background: s.highlight ? C.accentGlow : "transparent", borderLeft: `3px solid ${s.highlight ? C.accent : "transparent"}` }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                        <span style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 700, color: s.color }}>{s.label}</span>
+                        <span style={{ fontFamily: "monospace", fontSize: 12, color: C.textMid }}>Payoff: <span style={{ color: C.text }}>{s.payoff}</span></span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 8 }}>
+                        {[["Mortgage Int", fmt(s.mInt), C.amber], ["HELOC Int", fmt(s.hInt), s.hInt > 0 ? C.accent : C.textDim], ["Total Interest", fmt(s.total), s.color]].map(([lbl, val, col]) => (
+                          <div key={lbl}>
+                            <div style={{ fontSize: 9, color: C.textDim, fontFamily: "monospace", textTransform: "uppercase", marginBottom: 2 }}>{lbl}</div>
+                            <div style={{ fontSize: 14, fontFamily: "monospace", color: col, fontWeight: lbl === "Total Interest" ? 700 : 400 }}>{val}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: 10, color: C.textDim }}><span style={{ color: C.textMid }}>Liquidity: </span>{s.liquidity}</div>
+                      <div style={{ fontSize: 10, color: C.textDim, marginTop: 3, fontStyle: "italic" }}>{s.note}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>}
 
-            document.getElementById('verdict').textContent = verdict;
-        }
+            {!result && (
+              <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 32, textAlign: "center" }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>⚠</div>
+                <div style={{ color: C.red, fontFamily: "monospace", fontSize: 14, marginBottom: 8 }}>INSUFFICIENT EQUITY FOR HELOC</div>
+                <div style={{ color: C.textMid, fontSize: 13 }}>Your mortgage balance ({fmt(mortgageBal)}) exceeds 80% LTV ({fmt(homeValue * 0.8)}).<br/>You need {fmt(mortgageBal - homeValue * 0.8)} more equity to qualify.</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
-        // Auto-calculate on load
-        window.addEventListener('load', calculate);
-    </script>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
+        <p style={{ fontSize: 10, color: C.textDim, fontFamily: "monospace", textAlign: "center" }}>
+          For educational purposes only. Assumes 80% LTV HELOC, income on 1st & 15th, CC paid day 25. Consult a financial advisor before making mortgage decisions.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
 </body>
 </html>
