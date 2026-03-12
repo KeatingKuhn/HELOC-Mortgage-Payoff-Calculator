@@ -11,7 +11,7 @@
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:#0a0e1a;color:#e8f0fe;font-family:Georgia,serif;}
-  input[type=range]{width:100%;cursor:pointer;height:4px;accent-color:#00d4ff;}
+  /* range inputs replaced with custom slider */
   input[type=number]{-moz-appearance:textfield;}
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
   ::-webkit-scrollbar{width:6px;height:6px;}
@@ -135,7 +135,69 @@ function Label({children,tip}){
   return(<div style={{fontSize:11,color:C.textMid,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"monospace",marginBottom:5,display:"flex",alignItems:"center"}}>{children}{tip&&<InfoTip text={tip}/>}</div>);
 }
 function SliderInput({label,value,min,max,step,onChange,format,hint,tip}){
-  return(<div style={{marginBottom:18}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:5,alignItems:"center"}}><Label tip={tip}>{label}</Label><span style={{fontSize:13,color:C.accent,fontFamily:"monospace",fontWeight:700}}>{format(value)}</span></div><input type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))}/>{hint&&<div style={{fontSize:10,color:C.textDim,marginTop:3}}>{hint}</div>}</div>);
+  const trackRef=React.useRef(null);
+  const fillRef=React.useRef(null);
+  const thumbRef=React.useRef(null);
+  const badgeRef=React.useRef(null);
+
+  const calcValue=clientX=>{
+    const rect=trackRef.current.getBoundingClientRect();
+    const raw=((clientX-rect.left)/rect.width)*(max-min)+min;
+    const stepped=Math.round(raw/step)*step;
+    return Math.min(max,Math.max(min,parseFloat(stepped.toFixed(10))));
+  };
+
+  const updateDOM=v=>{
+    const p=((v-min)/(max-min))*100;
+    if(fillRef.current) fillRef.current.style.width=p+"%";
+    if(thumbRef.current) thumbRef.current.style.left=p+"%";
+    if(badgeRef.current) badgeRef.current.textContent=format(v);
+  };
+
+  const onDown=e=>{
+    e.preventDefault();
+    const clientX=e.touches?e.touches[0].clientX:e.clientX;
+    let lastVal=calcValue(clientX);
+    updateDOM(lastVal);
+    const onMove=ev=>{
+      ev.preventDefault();
+      const cx=ev.touches?ev.touches[0].clientX:ev.clientX;
+      lastVal=calcValue(cx);
+      updateDOM(lastVal);
+    };
+    const onUp=()=>{
+      onChange(lastVal);
+      window.removeEventListener("mousemove",onMove);
+      window.removeEventListener("mouseup",onUp);
+      window.removeEventListener("touchmove",onMove);
+      window.removeEventListener("touchend",onUp);
+    };
+    window.addEventListener("mousemove",onMove);
+    window.addEventListener("mouseup",onUp);
+    window.addEventListener("touchmove",onMove,{passive:false});
+    window.addEventListener("touchend",onUp);
+  };
+
+  const pct=((value-min)/(max-min))*100;
+  return(
+    <div style={{marginBottom:18}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:8,alignItems:"center"}}>
+        <Label tip={tip}>{label}</Label>
+        <span ref={badgeRef} style={{fontSize:13,color:"#00d4ff",fontFamily:"monospace",fontWeight:700,background:"rgba(0,212,255,0.08)",border:"1px solid rgba(0,212,255,0.2)",borderRadius:5,padding:"2px 7px"}}>{format(value)}</span>
+      </div>
+      <div ref={trackRef} onMouseDown={onDown} onTouchStart={onDown}
+        style={{position:"relative",height:24,cursor:"grab",userSelect:"none"}}>
+        <div style={{position:"absolute",top:"50%",left:0,right:0,height:4,borderRadius:2,background:"#1e2d45",transform:"translateY(-50%)"}}/>
+        <div ref={fillRef} style={{position:"absolute",top:"50%",left:0,width:pct+"%",height:4,borderRadius:2,background:"#00d4ff",transform:"translateY(-50%)"}}/>
+        <div ref={thumbRef} style={{position:"absolute",top:"50%",left:pct+"%",width:18,height:18,borderRadius:"50%",background:"#00d4ff",transform:"translate(-50%,-50%)",boxShadow:"0 0 0 4px rgba(0,212,255,0.25)",pointerEvents:"none"}}/>
+      </div>
+      {hint&&<div style={{display:"flex",justifyContent:"space-between",marginTop:2}}>
+        <span style={{fontSize:9,color:"#4a5568",fontFamily:"monospace"}}>{format(min)}</span>
+        <span style={{fontSize:9,color:"#4a5568",fontFamily:"monospace"}}>{hint}</span>
+        <span style={{fontSize:9,color:"#4a5568",fontFamily:"monospace"}}>{format(max)}</span>
+      </div>}
+    </div>
+  );
 }
 function useNumberInput(value,onChange){
   const[raw,setRaw]=useState(value===0?"":String(value));
@@ -326,7 +388,11 @@ function App(){
   const[insurMode,setInsurMode]=useState("monthly");      // monthly|annual|escrow
   const[insurMonthly,setInsurMonthly]=useState(0);
   const[insurAnnual,setInsurAnnual]=useState(0);
-  const[remainingYears,setRemainingYears]=useState(28);
+  const now=new Date();
+  const defEnd=new Date(now.getFullYear()+28,now.getMonth());
+  const[endMonth,setEndMonth]=useState(defEnd.getMonth()+1);
+  const[endYear,setEndYear]=useState(defEnd.getFullYear());
+  const remainingYears=(()=>{const now=new Date();const months=(endYear-now.getFullYear())*12+(endMonth-1-now.getMonth());return Math.max(1,Math.round(months/12));})();
   const[homeValue,setHomeValue]=useState(400000);
   // HELOC
   const[helocRate,setHelocRate]=useState(8.5);
@@ -580,7 +646,24 @@ function App(){
                   tip="Homeowner's insurance premium. Select 'In escrow' if already bundled into your mortgage payment."
                 />
 
-                <SliderInput label="Years Remaining" value={remainingYears} min={1} max={30} step={1} onChange={setRemainingYears} format={v=>v+"y"} hint="How many years left on the loan" tip="More years remaining = more front-loaded interest still ahead = more to save."/>
+                <div style={{marginBottom:18}}>
+                  <Label tip="The month and year your mortgage is scheduled to be paid off.">Loan End Date</Label>
+                  <div style={{display:"flex",gap:8,marginTop:6}}>
+                    <select value={endMonth} onChange={e=>setEndMonth(Number(e.target.value))}
+                      style={{flex:1,background:"#0d1f35",color:"#e2e8f0",border:"1px solid #1e3a5f",borderRadius:6,padding:"6px 8px",fontSize:14}}>
+                      {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m,i)=>(
+                        <option key={i} value={i+1}>{m}</option>
+                      ))}
+                    </select>
+                    <select value={endYear} onChange={e=>setEndYear(Number(e.target.value))}
+                      style={{flex:2,background:"#0d1f35",color:"#e2e8f0",border:"1px solid #1e3a5f",borderRadius:6,padding:"6px 8px",fontSize:14}}>
+                      {Array.from({length:36},(_,i)=>new Date().getFullYear()+i).map(y=>(
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{marginTop:4,fontSize:11,color:"#4a9eff",fontFamily:"monospace"}}>{remainingYears} year{remainingYears!==1?"s":""} remaining</div>
+                </div>
                 <NumInput label="Current Home Value" value={homeValue} onChange={setHomeValue} tip="Use Zillow, Redfin, or a recent appraisal. Lenders will appraise independently before issuing a HELOC."/>
 
                 <div style={{background:C.bg,borderRadius:8,border:`1px solid ${C.border}`,padding:"10px 12px",marginTop:4}}>
