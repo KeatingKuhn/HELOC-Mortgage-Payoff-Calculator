@@ -536,18 +536,15 @@ function App(){
               </div>
             ))}
           </div>
-          <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>setActiveSection("calculator")} style={{padding:"11px 24px",background:C.accent,color:C.bg,border:"none",borderRadius:8,fontFamily:"monospace",fontSize:12,fontWeight:700,cursor:"pointer",letterSpacing:"0.05em",textTransform:"uppercase"}}>Run My Numbers →</button>
-            <button onClick={()=>setActiveSection("learn")} style={{padding:"11px 24px",background:"transparent",color:C.accent,border:`1px solid ${C.accent}44`,borderRadius:8,fontFamily:"monospace",fontSize:12,fontWeight:700,cursor:"pointer",letterSpacing:"0.05em",textTransform:"uppercase"}}>How Does It Work?</button>
-          </div>
+
         </div>
       </div>
 
       {/* NAV */}
       <div style={{borderBottom:`1px solid ${C.border}`,background:C.surface,position:"sticky",top:0,zIndex:50}}>
-        <div style={{maxWidth:1200,margin:"0 auto",padding:"0 28px",display:"flex",gap:0}}>
-          {[["calculator","🧮 Calculator"],["learn","📖 How It Works"],["lender","🏦 Checklists"],["risk","⚠️ Risk Scenarios"],["faq","❓ FAQ"]].map(([key,label])=>(
-            <button key={key} onClick={()=>setActiveSection(key)} style={{padding:"14px 18px",background:"transparent",border:"none",borderBottom:`2px solid ${activeSection===key?C.accent:"transparent"}`,cursor:"pointer",fontFamily:"monospace",fontSize:11,color:activeSection===key?C.accent:C.textMid,letterSpacing:"0.05em",textTransform:"uppercase",transition:"all 0.15s",whiteSpace:"nowrap"}}>{label}</button>
+        <div style={{display:"flex",width:"100%"}}>
+          {[["calculator","🧮 Calculator"],["results","📊 Results"],["learn","📖 How It Works"],["lender","🏦 Checklists"],["risk","⚠️ Risk Scenarios"],["faq","❓ FAQ"]].map(([key,label])=>(
+            <button key={key} onClick={()=>setActiveSection(key)} style={{flex:1,padding:"16px 8px",background:"transparent",border:"none",borderBottom:`3px solid ${activeSection===key?C.accent:"transparent"}`,cursor:"pointer",fontFamily:"monospace",fontSize:11,color:activeSection===key?C.accent:C.textMid,letterSpacing:"0.05em",textTransform:"uppercase",transition:"all 0.15s",whiteSpace:"nowrap"}}>{label}</button>
           ))}
         </div>
       </div>
@@ -559,9 +556,9 @@ function App(){
         {activeSection==="risk"&&<div className="fade-in" style={{display:"flex",flexDirection:"column",gap:20}}><RiskScenarios baseResult={result} params={params}/><BreakevenChart result={result}/></div>}
         {activeSection==="faq"&&<div className="fade-in"><FaqSection/></div>}
 
-        {activeSection==="calculator"&&<div style={{display:"grid",gridTemplateColumns:"400px 1fr",gap:28}}>
+        {activeSection==="calculator"&&<div style={{maxWidth:600,margin:"0 auto"}}>
 
-          {/* ── LEFT COLUMN ── */}
+          {/* ── INPUTS ── */}
           <div>
 
             {/* helper */}
@@ -764,33 +761,52 @@ function App(){
             })()}
 
             {/* SURPLUS SUMMARY */}
-            <div style={{background:surplus>0?C.greenDim:C.redDim,border:`1px solid ${surplus>0?C.green+"44":C.red+"44"}`,borderRadius:12,padding:18}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
-                <div>
-                  <div style={{fontSize:10,color:surplus>0?C.green:C.red,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Monthly Surplus</div>
-                  <div style={{fontSize:11,color:C.textDim,lineHeight:1.5}}>This is how fast your HELOC balance drops each month. Higher = faster payoff.</div>
+            {(()=>{
+              const ready=mortgageBal>0&&monthlyIncome>0&&surplus>0&&result;
+              return(
+              <div style={{background:surplus>0?C.greenDim:C.redDim,border:`1px solid ${surplus>0?C.green+"44":C.red+"44"}`,borderRadius:12,padding:18}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                  <div>
+                    <div style={{fontSize:10,color:surplus>0?C.green:C.red,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Monthly Surplus</div>
+                    <div style={{fontSize:11,color:C.textDim,lineHeight:1.5}}>This is how fast your HELOC balance drops each month. Higher = faster payoff.</div>
+                  </div>
+                  <div style={{fontSize:32,fontFamily:"monospace",fontWeight:800,color:surplus>0?C.green:C.red}}>{fmt(surplus)}</div>
                 </div>
-                <div style={{fontSize:32,fontFamily:"monospace",fontWeight:800,color:surplus>0?C.green:C.red}}>{fmt(surplus)}</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:11,fontFamily:"monospace",marginBottom:12}}>
+                  <div style={{background:"rgba(0,0,0,0.2)",borderRadius:6,padding:"8px 10px"}}>
+                    <div style={{color:C.textDim,marginBottom:2}}>Total income</div>
+                    <div style={{color:C.green,fontWeight:700}}>{fmt(monthlyIncome)}</div>
+                  </div>
+                  <div style={{background:"rgba(0,0,0,0.2)",borderRadius:6,padding:"8px 10px"}}>
+                    <div style={{color:C.textDim,marginBottom:2}}>Total outflow</div>
+                    <div style={{color:C.amber,fontWeight:700}}>{fmt(totalMonthlyOut)}</div>
+                  </div>
+                </div>
+                {surplus<=500&&surplus>0&&<div style={{marginTop:0,marginBottom:10,fontSize:11,color:C.amber,lineHeight:1.5}}>⚠ Surplus under $500/month. The strategy works but payoff cycles will be long. Consider reducing discretionary expenses first.</div>}
+                {surplus<=0&&<div style={{marginTop:0,marginBottom:10,fontSize:11,color:C.red,lineHeight:1.5}}>⚠ Negative surplus. Velocity banking requires positive monthly cash flow. Adjust income or expenses above until this number is positive.</div>}
+                <button
+                  onClick={()=>ready&&setActiveSection("results")}
+                  style={{width:"100%",padding:"13px 0",borderRadius:9,border:"none",cursor:ready?"pointer":"default",fontFamily:"monospace",fontSize:13,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",transition:"all 0.2s",
+                    background:ready?"#00c853":"#1e3a5f",
+                    color:ready?"#001a0a":C.textDim,
+                    boxShadow:ready?"0 0 18px rgba(0,200,83,0.35)":"none",
+                    opacity:ready?1:0.5
+                  }}
+                >{ready?"📊 See Results →":"Fill in your numbers above first"}</button>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:11,fontFamily:"monospace"}}>
-                <div style={{background:"rgba(0,0,0,0.2)",borderRadius:6,padding:"8px 10px"}}>
-                  <div style={{color:C.textDim,marginBottom:2}}>Total income</div>
-                  <div style={{color:C.green,fontWeight:700}}>{fmt(monthlyIncome)}</div>
-                </div>
-                <div style={{background:"rgba(0,0,0,0.2)",borderRadius:6,padding:"8px 10px"}}>
-                  <div style={{color:C.textDim,marginBottom:2}}>Total outflow</div>
-                  <div style={{color:C.amber,fontWeight:700}}>{fmt(totalMonthlyOut)}</div>
-                </div>
-              </div>
-              {surplus<=500&&surplus>0&&<div style={{marginTop:10,fontSize:11,color:C.amber,lineHeight:1.5}}>⚠ Surplus under $500/month. The strategy works but payoff cycles will be long. Consider reducing discretionary expenses first.</div>}
-              {surplus<=0&&<div style={{marginTop:10,fontSize:11,color:C.red,lineHeight:1.5}}>⚠ Negative surplus. Velocity banking requires positive monthly cash flow. Adjust income or expenses above until this number is positive.</div>}
-            </div>
+              );
+            })()}
 
           </div>
+        </div>}
 
-          {/* ── RIGHT COLUMN ── */}
-          <div>
-            {/* Verdict */}
+        {/* ── RESULTS TAB ── */}
+        {activeSection==="results"&&<div className="fade-in">
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+            <button onClick={()=>setActiveSection("calculator")} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:7,padding:"7px 14px",cursor:"pointer",fontFamily:"monospace",fontSize:11,color:C.textMid,letterSpacing:"0.05em"}}>← Edit Numbers</button>
+            <div style={{fontSize:11,color:C.textDim,fontFamily:"monospace"}}>Adjust the <span style={{color:C.accent,cursor:"pointer"}} onClick={()=>setActiveSection("calculator")}>calculator</span> and come back any time</div>
+          </div>
+          {/* Verdict */}
             <div style={{background:vc.bg,border:`1px solid ${vc.color}44`,borderLeft:`4px solid ${vc.color}`,borderRadius:10,padding:"16px 20px",marginBottom:16,display:"flex",alignItems:"flex-start",gap:14}}>
               <span style={{fontSize:30,lineHeight:1,flexShrink:0}}>{vc.icon}</span>
               <div style={{flex:1}}>
@@ -844,8 +860,8 @@ function App(){
                 {[["year-by-year","Year-by-Year"],["cycles-comparison","Cycles & Comparison"]].map(([t,l])=><Tab key={t} label={l} active={tab===t} onClick={()=>setTab(t)}/>)}
               </div>
 
-              {/* Tab panels — minWidth locks the container to year-by-year table width */}
-              <div style={{minWidth:800}}>
+              {/* Tab panels */}
+              <div style={{overflowX:"auto"}}>
 
                 {/* Year-by-Year */}
               <div style={{display:tab==="year-by-year"?"block":"none",background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden"}}>
@@ -949,8 +965,6 @@ function App(){
               <div style={{color:C.red,fontFamily:"monospace",fontSize:15,marginBottom:12,fontWeight:700}}>INSUFFICIENT EQUITY FOR A HELOC</div>
               <div style={{color:C.textMid,fontSize:13,lineHeight:1.8}}>Your mortgage balance (<strong style={{color:C.text}}>{fmt(mortgageBal)}</strong>) exceeds the {ltvLimit}% LTV ceiling (<strong style={{color:C.text}}>{fmt(homeValue*ltvLimit/100)}</strong>).<br/>You need <strong style={{color:C.amber}}>{fmt(mortgageBal-homeValue*ltvLimit/100)}</strong> more equity to qualify.<br/><br/>Try raising your home value estimate, adjusting the LTV limit, or lowering your mortgage balance to explore future scenarios.</div>
             </div>}
-          </div>
-
         </div>}
       </div>
 
