@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Mortgage Acceleration Calculator — HELOC Velocity Banking Strategy</title>
-<meta name="description" content="Calculate how the HELOC velocity banking strategy can eliminate your mortgage in 5–7 years using your existing cash flow. Based on the chunking method taught by Michael Lush."/>
+<meta name="description" content="Calculate how the HELOC velocity banking strategy can eliminate your mortgage in 5–7 years using your existing cash flow. Based on the velocity banking chunking strategy."/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -22,9 +22,9 @@
   .tooltip .tip{visibility:hidden;background:#1a2235;color:#8899bb;font-size:11px;font-family:monospace;border:1px solid #1e2d45;border-radius:6px;padding:8px 10px;position:absolute;z-index:100;bottom:130%;left:50%;transform:translateX(-50%);width:240px;line-height:1.5;pointer-events:none;}
   .tooltip:hover .tip{visibility:visible;}
   .faq-item{border-bottom:1px solid #1e2d45;}
-  .faq-q{padding:15px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#e8f0fe;transition:background 0.15s;}
+  .faq-q{padding:16px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:14px;color:#e8f0fe;transition:background 0.15s;}
   .faq-q:hover{background:#1a2235;}
-  .faq-a{padding:0 18px 16px;font-size:12px;color:#8899bb;line-height:1.8;}
+  .faq-a{padding:0 18px 16px;font-size:13px;color:#8899bb;line-height:1.85;}
   @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
   .fade-in{animation:fadeIn 0.35s ease forwards;}
   .checklist-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #1e2d45;}
@@ -38,18 +38,18 @@ const {useState,useEffect} = React;
 const C={bg:"#0a0e1a",surface:"#111827",surfaceAlt:"#1a2235",border:"#1e2d45",accent:"#00d4ff",accentDim:"#0099bb",accentGlow:"rgba(0,212,255,0.12)",green:"#00e5a0",greenDim:"rgba(0,229,160,0.10)",red:"#ff4d6d",redDim:"rgba(255,77,109,0.10)",amber:"#ffb700",amberDim:"rgba(255,183,0,0.10)",text:"#e8f0fe",textMid:"#8899bb",textDim:"#4a5568"};
 
 const FAQS=[
-  {q:"Who is Michael Lush and where does this strategy come from?",a:"Michael Lush is the founder of Replace Your Mortgage and Replace Your University. He spent 15 years as a mortgage loan originator before a wealthy mentor revealed how affluent people actually finance homes — using lines of credit, not mortgages. He discovered that before 1913, mortgages in America worked more like HELOCs: open, flexible, with money flowing in and out freely. The 30-year fixed mortgage was engineered to separate people from their cash and grow bank deposits. Lush made it his mission to teach the alternative. He now teaches at replaceyouruniversity.com and has a popular YouTube channel."},
-  {q:"What is velocity banking and what does 'chunking' mean?",a:"Velocity banking is a strategy where you use a HELOC as your primary bank account, routing all income through it to minimize daily interest, then periodically drawing lump sums (chunks) onto your mortgage principal to eliminate front-loaded interest. Michael Lush's core insight is this: time and balance are more important than interest rate. A mortgage keeps a massive balance for decades. A HELOC balance drops aggressively every month as income flows through. The result: even at a higher HELOC rate, you pay far less total interest because the balance at risk is always shrinking."},
-  {q:"If my HELOC rate is higher than my mortgage rate, how does this still save money?",a:"This is the most common objection — and Lush addresses it directly. The HELOC balance is never fixed. It drops every month as your income flows through it. You're paying a higher rate on a rapidly declining number, not a fixed one. Meanwhile, the lump-sum chunks onto the mortgage eliminate massive blocks of principal and all the compounding interest that would have accrued on them for decades. The net effect: total HELOC interest over the entire strategy is often only a few thousand dollars per year, while mortgage interest saved is in the tens of thousands. The math works because you're comparing a small, shrinking HELOC against a large, slow-moving mortgage."},
-  {q:"What is paycheck parking and why does it matter?",a:"Paycheck parking is depositing your entire paycheck directly into the HELOC the moment you're paid, rather than into a checking account. Every dollar sitting in the HELOC reduces its balance — which reduces the average daily balance — which reduces interest charged that month. Lush emphasizes: money sitting in a checking account earns nearly nothing while your HELOC charges interest daily. Parking your paycheck in the HELOC the day it arrives, and paying bills at the end of the month via credit card, maximizes the time your income spends reducing the HELOC balance. Some community banks offer sweep accounts that automate this."},
-  {q:"Why does Lush say to use a community bank or credit union?",a:"Big banks typically don't support HELOC-as-checking-account banking and often don't allow direct deposit into a HELOC. Community banks and credit unions are more likely to offer: direct deposit capability into a HELOC, debit card access to draw funds, online transfers, sweep accounts that automatically move checking balances to the HELOC, better rates and fewer fees, and more flexible terms. Lush consistently advises avoiding big national banks for this strategy. Call local credit unions first — ask specifically if they allow direct deposit into a HELOC and if they offer a sweep account."},
+  {q:"Where does the velocity banking strategy come from?",a:"Velocity banking has roots that predate modern finance. Before the 1930s, homes were commonly financed with flexible lines of credit — open instruments where money flowed in and out freely. The 30-year fixed mortgage was engineered to create predictable, front-loaded interest income for banks. Velocity banking revives the older, more efficient approach: use a revolving line of credit as your primary financial account, route all income through it, and systematically eliminate mortgage principal in lump-sum chunks. The math has always been there. Most homeowners were simply never shown it."},
+  {q:"What is velocity banking and what does 'chunking' mean?",a:"Velocity banking is a strategy where you use a HELOC as your primary bank account, routing all income through it to minimize daily interest, then periodically drawing lump sums (chunks) onto your mortgage principal to eliminate front-loaded interest. The core insight is this: time and balance are more important than interest rate. A mortgage keeps a massive balance for decades. A HELOC balance drops aggressively every month as income flows through. The result: even at a higher HELOC rate, you pay far less total interest because the balance at risk is always shrinking."},
+  {q:"If my HELOC rate is higher than my mortgage rate, how does this still save money?",a:"This is the most common objection — here's the honest answer. The HELOC balance is never fixed. It drops every month as your income flows through it. You're paying a higher rate on a rapidly declining number, not a fixed one. Meanwhile, the lump-sum chunks onto the mortgage eliminate massive blocks of principal and all the compounding interest that would have accrued on them for decades. The net effect: total HELOC interest over the entire strategy is often only a few thousand dollars per year, while mortgage interest saved is in the tens of thousands. The math works because you're comparing a small, shrinking HELOC against a large, slow-moving mortgage."},
+  {q:"What is paycheck parking and why does it matter?",a:"Paycheck parking is depositing your entire paycheck directly into the HELOC the moment you're paid, rather than into a checking account. Every dollar sitting in the HELOC reduces its balance — which reduces the average daily balance — which reduces interest charged that month. The math is simple: money sitting in a checking account earns nearly nothing while your HELOC charges interest daily. Parking your paycheck in the HELOC the day it arrives, and paying bills at the end of the month via credit card, maximizes the time your income spends reducing the HELOC balance. Some community banks offer sweep accounts that automate this."},
+  {q:"Why use a community bank or credit union instead of a big bank?",a:"Big banks typically don't support HELOC-as-checking-account banking and often won't allow direct deposit into a HELOC. Community banks and credit unions are more likely to offer: direct deposit capability into a HELOC, debit card access to draw funds, online bill pay, sweep accounts that automatically move checking balances to the HELOC, better rates and fewer fees. Avoid big national banks for this strategy. Call local credit unions first — ask specifically if they allow direct deposit into a HELOC and if they offer a sweep account."},
   {q:"What is the 'equity draw per cycle' and why does 25% often work best?",a:"When your HELOC hits $0 that's a completed cycle. You then draw new equity from your home and chunk it onto the mortgage. The draw percentage controls the size of each chunk. Drawing 100% means carrying a large HELOC balance at a higher rate for a long time. Drawing 25% keeps the HELOC small so it clears fast and stays cheap — while still delivering meaningful mortgage paydown. At low mortgage rates (3–4%), go even lower (10–15%) to minimize HELOC interest. At higher mortgage rates (5%+), you can go higher since the rate differential is smaller."},
-  {q:"What is LTV and how does it affect my available credit?",a:"LTV stands for Loan-to-Value — your mortgage balance divided by your home's value. Most lenders cap combined mortgage + HELOC at 80% LTV. Example: $500k home × 80% = $400k ceiling. If you owe $320k, you can access up to $80k via HELOC. As your mortgage drops AND as your home appreciates, your available ceiling grows — allowing larger chunks each cycle. Lush points out that home appreciation is a powerful multiplier: a $500k home appreciating 4%/yr adds $20k per year to your HELOC ceiling independently of any principal paydown."},
-  {q:"Should I use my HELOC as my actual checking account?",a:"Yes — this is the core mechanic Lush teaches. When your paycheck hits the HELOC, your balance drops before expenses leave. That temporary reduction lowers your average daily balance for the month, reducing interest. Using a credit card for daily purchases (paid in full from the HELOC monthly) extends the time your income sits in the HELOC. Keep credit cards open and active — strong credit is important for maintaining HELOC access. Lush also notes: never carry a credit card balance. Pay it in full every month from the HELOC."},
-  {q:"What are the real risks?",a:"Lush is honest about these: (1) Variable rate risk — HELOCs are variable. If Prime rises your HELOC interest increases. Model a worst case in the calculator. (2) Income dependence — if income drops or expenses spike, the HELOC balance may stop declining. Build a real emergency fund separate from the HELOC before starting. (3) Discipline required — the HELOC is accessible 24/7. One major non-essential draw can derail a cycle. (4) Bank can freeze the line — if home values drop, lenders have frozen HELOCs during downturns. (5) Draw period — HELOCs typically have a 10-year draw period, then convert to repayment. Ensure your payoff timeline fits."},
-  {q:"Do I need good credit to open a HELOC?",a:"Most lenders require 620+ credit score, with better rates at 700+. You also need: at least 20% equity, stable verifiable income, debt-to-income ratio under 43%, and the home as your primary residence. Lush's advice: shop multiple community banks and credit unions — don't just go to your existing bank. Rates and terms vary significantly. Ask specifically about draw period length, whether they allow direct deposit into the HELOC, and whether there are early termination fees."},
+  {q:"What is LTV and how does it affect my available credit?",a:"LTV stands for Loan-to-Value — your mortgage balance divided by your home's value. Most lenders cap combined mortgage + HELOC at 80% LTV. Example: $500k home × 80% = $400k ceiling. If you owe $320k, you can access up to $80k via HELOC. As your mortgage drops AND as your home appreciates, your available ceiling grows — allowing larger chunks each cycle. Home appreciation is a powerful multiplier: a $500k home appreciating 4%/yr adds $20k per year to your HELOC ceiling independently of any principal paydown."},
+  {q:"Should I use my HELOC as my actual checking account?",a:"Yes — this is the core mechanic. When your paycheck hits the HELOC, your balance drops before expenses leave. That temporary reduction lowers your average daily balance for the month, reducing interest. Using a credit card for daily purchases (paid in full from the HELOC monthly) extends the time your income sits in the HELOC. Keep credit cards open and active — strong credit is important for maintaining HELOC access. Critical rule: never carry a credit card balance. Pay it in full every month from the HELOC."},
+  {q:"What are the real risks?",a:"Go in clear-eyed: (1) Variable rate risk — HELOCs are variable. If Prime rises your HELOC interest increases. Model a worst case in the calculator. (2) Income dependence — if income drops or expenses spike, the HELOC balance may stop declining. Build a real emergency fund separate from the HELOC before starting. (3) Discipline required — the HELOC is accessible 24/7. One major non-essential draw can derail a cycle. (4) Bank can freeze the line — if home values drop, lenders have frozen HELOCs during downturns. (5) Draw period — HELOCs typically have a 10-year draw period, then convert to repayment. Ensure your payoff timeline fits."},
+  {q:"Do I need good credit to open a HELOC?",a:"Most lenders require 620+ credit score, with better rates at 700+. You also need: at least 20% equity, stable verifiable income, debt-to-income ratio under 43%, and the home as your primary residence. The move: shop multiple community banks and credit unions — don't just go to your existing bank. Rates and terms vary significantly. Ask specifically about draw period length, whether they allow direct deposit into the HELOC, and whether there are early termination fees."},
   {q:"Is HELOC interest tax deductible?",a:"Under current US tax law (post-2017 Tax Cuts and Jobs Act), HELOC interest is only deductible if funds are used to buy, build, or substantially improve the home securing the loan. Using HELOC funds to pay down your mortgage principal likely does not qualify. Consult a CPA for your specific situation — don't count on a deduction when running your numbers."},
-  {q:"My mortgage rate is 2.5–4%. Does velocity banking still make sense?",a:"Lush addresses this directly: even at low mortgage rates, the strategy has value — the argument just shifts from pure interest savings to liquidity and payoff acceleration. At 3.25% mortgage vs 8.5% HELOC, you're borrowing at a premium — but the HELOC pays down fast (months, not decades) and the mortgage principal elimination is large. The net HELOC interest cost is modest. Meanwhile, extra payments made directly to a 3.25% mortgage lock your cash away permanently unless you refinance. With the HELOC strategy, your money stays accessible at all times. Set the redraw slider low (10–15%) to minimize HELOC interest cost, and check the break-even year. If it crosses positive before your target payoff, the strategy wins."},
+  {q:"My mortgage rate is 2.5–4%. Does velocity banking still make sense?",a:"Even at low mortgage rates, the strategy has value — the argument just shifts from pure interest savings to liquidity and payoff acceleration. At 3.25% mortgage vs 8.5% HELOC, you're borrowing at a premium — but the HELOC pays down fast (months, not decades) and the mortgage principal elimination is large. The net HELOC interest cost is modest. Meanwhile, extra payments made directly to a 3.25% mortgage lock your cash away permanently unless you refinance. With the HELOC strategy, your money stays accessible at all times. Set the redraw slider low (10–15%) to minimize HELOC interest cost, and check the break-even year. If it crosses positive before your target payoff, the strategy wins."},
 ];
 
 function simulate(p){
@@ -232,7 +232,7 @@ function DollarInput({value,onChange,suffix}){
   return(<div style={{display:"flex",alignItems:"center",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,overflow:"hidden"}}><span style={{padding:"7px 9px",color:C.textDim,fontFamily:"monospace",fontSize:12,borderRight:`1px solid ${C.border}`}}>$</span><input type="text" inputMode="decimal" value={raw} onFocus={handleFocus} onChange={handleChange} onBlur={handleBlur} style={{flex:1,background:"transparent",border:"none",outline:"none",padding:"7px 9px",color:C.text,fontFamily:"monospace",fontSize:13}}/>{suffix&&<span style={{padding:"7px 9px",color:C.textDim,fontFamily:"monospace",fontSize:10,borderLeft:`1px solid ${C.border}`}}>{suffix}</span>}</div>);
 }
 function Card({label,value,sub,color=C.accent}){
-  return(<div style={{background:C.surfaceAlt,border:`1px solid ${C.border}`,borderTop:`2px solid ${color}`,borderRadius:10,padding:"14px 16px"}}><div style={{fontSize:10,color:C.textMid,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"monospace",marginBottom:5}}>{label}</div><div style={{fontSize:20,fontWeight:800,color,fontFamily:"monospace"}}>{value}</div>{sub&&<div style={{fontSize:10,color:C.textDim,marginTop:3,lineHeight:1.4}}>{sub}</div>}</div>);
+  return(<div style={{background:C.surfaceAlt,border:`1px solid ${C.border}`,borderTop:`2px solid ${color}`,borderRadius:10,padding:"14px 16px",display:"flex",alignItems:"center",gap:14}}><div style={{flex:1,minWidth:0}}><div style={{fontSize:10,color:C.textMid,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"monospace",marginBottom:4}}>{label}</div><div style={{fontSize:22,fontWeight:800,color,fontFamily:"monospace",lineHeight:1}}>{value}</div></div>{sub&&<div style={{fontSize:12,color:C.textDim,lineHeight:1.5,maxWidth:140,textAlign:"right",flexShrink:0}}>{sub}</div>}</div>);
 }
 function Tab({label,active,onClick}){
   return(<button onClick={onClick} style={{flex:1,padding:"8px 4px",borderRadius:6,border:"none",cursor:"pointer",fontFamily:"monospace",fontSize:10,letterSpacing:"0.04em",textTransform:"uppercase",background:active?C.accent:"transparent",color:active?C.bg:C.textMid,fontWeight:active?700:400,transition:"all 0.15s"}}>{label}</button>);
@@ -243,11 +243,11 @@ function Section({title,children,tip}){
 
 function HowItWorks(){
   const steps=[
-    {n:"01",title:"Open a HELOC — at the right bank",color:C.accent,desc:"Michael Lush is emphatic: avoid big banks. Go to a community bank or credit union. They offer better rates, fewer fees, and are more likely to allow direct deposit into the HELOC. A HELOC is a revolving line secured by your home equity — you only pay interest on what you borrow, and you can draw and repay it as many times as you want during the draw period (typically 10 years)."},
-    {n:"02",title:"The Chunk — day one lump sum",color:C.accent,desc:"Draw a meaningful lump sum from the HELOC and apply it directly to your mortgage principal. Lush calls this 'chunking.' A $20–$30k chunk eliminates principal that would have generated years of front-loaded interest. Your mortgage drops immediately. Your HELOC balance rises by the same amount — but this debt is on simple interest, not amortized."},
-    {n:"03",title:"Paycheck parking",color:C.green,desc:"Direct deposit your entire paycheck into the HELOC the moment you're paid. Every dollar sitting in the HELOC reduces its balance — which reduces your average daily balance — which reduces the interest charged that month. Lush teaches this is where most of the HELOC interest savings come from. Don't let income sit in a checking account earning nothing while your HELOC charges interest."},
-    {n:"04",title:"Use a credit card for monthly bills",color:C.green,desc:"Pay all monthly expenses on a credit card throughout the month. On the due date, pay the card in full from the HELOC. This keeps your income parked in the HELOC as long as possible each month, minimizing the average daily balance. Lush also notes: keep your credit cards open and active — strong credit supports your ability to maintain the HELOC."},
-    {n:"05",title:"Redraw and repeat the cycle",color:C.amber,desc:"When your HELOC reaches $0, you've completed a cycle. Draw another chunk onto the mortgage. Because your home has been appreciating and your mortgage has been declining, your available HELOC ceiling is likely larger than the last draw. Each cycle eliminates a larger block of principal. Lush describes this as collapsing your mortgage balance from both directions."},
+    {n:"01",title:"Open a HELOC — at the right bank",color:C.accent,desc:"The single most important decision: avoid big banks. Go to a community bank or credit union. They offer better rates, fewer fees, and are more likely to allow direct deposit into the HELOC. A HELOC is a revolving line secured by your home equity — you only pay interest on what you borrow, and you can draw and repay it as many times as you want during the draw period (typically 10 years)."},
+    {n:"02",title:"The Chunk — day one lump sum",color:C.accent,desc:"Draw a meaningful lump sum from the HELOC and apply it directly to your mortgage principal. This is called chunking. A $20–$30k chunk eliminates principal that would have generated years of front-loaded interest. Your mortgage drops immediately. Your HELOC balance rises by the same amount — but this debt is on simple interest, not amortized."},
+    {n:"03",title:"Paycheck parking",color:C.green,desc:"Direct deposit your entire paycheck into the HELOC the moment you're paid. Every dollar sitting in the HELOC reduces its balance — which reduces your average daily balance — which reduces the interest charged that month. This is where most of the HELOC interest savings come from. Don't let income sit in a checking account earning nothing while your HELOC charges interest."},
+    {n:"04",title:"Use a credit card for monthly bills",color:C.green,desc:"Pay all monthly expenses on a credit card throughout the month. On the due date, pay the card in full from the HELOC. This keeps your income parked in the HELOC as long as possible each month, minimizing the average daily balance. Keep your credit cards open and active — strong credit supports your ability to maintain the HELOC."},
+    {n:"05",title:"Redraw and repeat the cycle",color:C.amber,desc:"When your HELOC reaches $0, you've completed a cycle. Draw another chunk onto the mortgage. Because your home has been appreciating and your mortgage has been declining, your available HELOC ceiling is likely larger than the last draw. Each cycle eliminates a larger block of principal. Each cycle collapses your mortgage balance from both directions."},
     {n:"06",title:"Mortgage gone in 5–7 years",color:C.amber,desc:"Repeat cycles until the mortgage is paid off. What was a 30-year sentence becomes 5–7 years for most families — on the exact same income, with no budget changes. Your money was accessible in the HELOC the entire time. The HELOC remains open after payoff as a powerful line of credit for investment or emergencies."},
   ];
   const loopNodes=[
@@ -265,7 +265,7 @@ function HowItWorks(){
         <div style={{fontSize:20,fontWeight:400,color:C.text,marginBottom:6}}>From 30 Years to 5–7 Years on the Same Income</div>
         <div style={{fontSize:13,color:C.textMid,lineHeight:1.6}}>Your mortgage is engineered to keep a large balance for as long as possible — that's how banks maximize interest collection. The chunking method breaks this cycle by routing your existing cash flow through a line of credit, collapsing the mortgage from the outside in. The strategy isn't new — it predates the 30-year fixed mortgage, which was introduced in the 1930s to separate homeowners from their cash and grow bank deposits.</div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:0}}>{steps.map((s,i)=>(<div key={i} style={{padding:"20px 22px",borderRight:i%3<2?`1px solid ${C.border}`:"none",borderBottom:i<3?`1px solid ${C.border}`:"none"}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><div style={{width:28,height:28,borderRadius:6,background:s.color+"22",border:`1px solid ${s.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"monospace",fontSize:11,color:s.color,fontWeight:700,flexShrink:0}}>{s.n}</div><div style={{fontSize:13,fontWeight:700,color:C.text}}>{s.title}</div></div><div style={{fontSize:12,color:C.textMid,lineHeight:1.7}}>{s.desc}</div></div>))}</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:0}}>{steps.map((s,i)=>(<div key={i} style={{padding:"20px 22px",borderRight:i%3<2?`1px solid ${C.border}`:"none",borderBottom:i<3?`1px solid ${C.border}`:"none"}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><div style={{width:28,height:28,borderRadius:6,background:s.color+"22",border:`1px solid ${s.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"monospace",fontSize:11,color:s.color,fontWeight:700,flexShrink:0}}>{s.n}</div><div style={{fontSize:13,fontWeight:700,color:C.text}}>{s.title}</div></div><div style={{fontSize:13,color:C.textMid,lineHeight:1.7}}>{s.desc}</div></div>))}</div>
     </div>
 
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
@@ -274,16 +274,16 @@ function HowItWorks(){
         <div style={{fontSize:17,fontWeight:400,color:C.text}}>How Cash Flows Through the Strategy — Month After Month</div>
       </div>
       <div style={{padding:"28px 32px"}}>
-        <div style={{display:"flex",alignItems:"flex-start",gap:0,flexWrap:"nowrap",overflowX:"auto",paddingBottom:8}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr auto 1fr auto 1fr auto 1fr",alignItems:"center",gap:0}}>
           {loopNodes.map((node,i)=>(
             <React.Fragment key={node.id}>
-              <div style={{flexShrink:0,textAlign:"center",minWidth:150}}>
-                <div style={{width:60,height:60,borderRadius:"50%",border:`2px solid ${node.color}`,background:node.color+"15",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px",fontSize:20}}>{node.label.split(" ")[0]}</div>
-                <div style={{fontSize:11,fontWeight:700,color:node.color,marginBottom:5,lineHeight:1.3}}>{node.label.slice(node.label.indexOf(" ")+1)}</div>
-                <div style={{fontSize:11,color:C.textDim,lineHeight:1.5,maxWidth:130,margin:"0 auto"}}>{node.desc}</div>
+              <div style={{textAlign:"center",padding:"0 8px"}}>
+                <div style={{width:80,height:80,borderRadius:"50%",border:`2px solid ${node.color}`,background:node.color+"18",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",fontSize:28}}>{node.label.split(" ")[0]}</div>
+                <div style={{fontSize:13,fontWeight:700,color:node.color,marginBottom:6,lineHeight:1.3}}>{node.label.slice(node.label.indexOf(" ")+1)}</div>
+                <div style={{fontSize:12,color:C.textDim,lineHeight:1.6}}>{node.desc}</div>
               </div>
-              {i<loopNodes.length-1&&<div style={{flexShrink:0,fontSize:22,color:C.textDim,padding:"0 6px",marginTop:18}}>→</div>}
-              {i===loopNodes.length-1&&<div style={{flexShrink:0,fontSize:22,color:C.accent,padding:"0 6px",marginTop:18,fontWeight:700}}>↺</div>}
+              {i<loopNodes.length-1&&<div style={{fontSize:24,color:C.textDim,textAlign:"center",padding:"0 4px",marginBottom:60}}>→</div>}
+              {i===loopNodes.length-1&&<div style={{fontSize:24,color:C.accent,textAlign:"center",padding:"0 4px",marginBottom:60,fontWeight:700}}>↺</div>}
             </React.Fragment>
           ))}
         </div>
@@ -330,7 +330,7 @@ function HowItWorks(){
 function WhoIsThisFor(){
   const good=["You have positive monthly cash flow — income exceeds all expenses","You have at least 20% equity in your home (80% LTV or better)","You want to pay off your mortgage early without losing access to your money","Your income is stable and predictable — salary, business distributions, or rental income","You have the discipline to not spend HELOC equity on depreciating assets or lifestyle","You're willing to move your banking to a community bank or credit union that supports the strategy","Even if your mortgage rate is low (3–4%), the liquidity and payoff acceleration may still make sense for you"];
   const bad=["You have negative cash flow — expenses exceed your income every month","You have less than 20% equity and can't qualify for a HELOC","Your income is highly variable with no reliable monthly floor","You would be tempted to draw the HELOC for vacations, cars, or non-essential spending","You live paycheck to paycheck with zero financial cushion or emergency fund","You are within 3–5 years of paying off the mortgage anyway — not enough runway to benefit"];
-  return(<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}><div style={{padding:"16px 24px",background:C.bg,borderBottom:`1px solid ${C.border}`}}><div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:4}}>// Fit Assessment</div><div style={{fontSize:18,fontWeight:400,color:C.text,marginBottom:4}}>Is Velocity Banking Right for You?</div><div style={{fontSize:12,color:C.textMid,lineHeight:1.6}}>Lush is upfront: this isn't for everyone. The three requirements are positive cash flow, home equity, and discipline. All three are non-negotiable.</div></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0}}><div style={{padding:"18px 22px",borderRight:`1px solid ${C.border}`}}><div style={{fontSize:12,color:C.green,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14}}>✓</span> Good candidate if...</div>{good.map((g,i)=>(<div key={i} style={{display:"flex",gap:8,marginBottom:10,alignItems:"flex-start"}}><span style={{color:C.green,fontSize:11,marginTop:2,flexShrink:0}}>●</span><span style={{fontSize:12,color:C.textMid,lineHeight:1.6}}>{g}</span></div>))}</div><div style={{padding:"18px 22px"}}><div style={{fontSize:12,color:C.red,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14}}>✗</span> Not a good fit if...</div>{bad.map((b,i)=>(<div key={i} style={{display:"flex",gap:8,marginBottom:10,alignItems:"flex-start"}}><span style={{color:C.red,fontSize:11,marginTop:2,flexShrink:0}}>●</span><span style={{fontSize:12,color:C.textMid,lineHeight:1.6}}>{b}</span></div>))}</div></div></div>);
+  return(<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}><div style={{padding:"16px 24px",background:C.bg,borderBottom:`1px solid ${C.border}`}}><div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:4}}>// Fit Assessment</div><div style={{fontSize:18,fontWeight:400,color:C.text,marginBottom:4}}>Is Velocity Banking Right for You?</div><div style={{fontSize:12,color:C.textMid,lineHeight:1.6}}>This strategy isn't for everyone. The three requirements are positive cash flow, home equity, and discipline. All three are non-negotiable.</div></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0}}><div style={{padding:"18px 22px",borderRight:`1px solid ${C.border}`}}><div style={{fontSize:12,color:C.green,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14}}>✓</span> Good candidate if...</div>{good.map((g,i)=>(<div key={i} style={{display:"flex",gap:8,marginBottom:10,alignItems:"flex-start"}}><span style={{color:C.green,fontSize:11,marginTop:2,flexShrink:0}}>●</span><span style={{fontSize:13,color:C.textMid,lineHeight:1.6}}>{g}</span></div>))}</div><div style={{padding:"18px 22px"}}><div style={{fontSize:12,color:C.red,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14}}>✗</span> Not a good fit if...</div>{bad.map((b,i)=>(<div key={i} style={{display:"flex",gap:8,marginBottom:10,alignItems:"flex-start"}}><span style={{color:C.red,fontSize:11,marginTop:2,flexShrink:0}}>●</span><span style={{fontSize:13,color:C.textMid,lineHeight:1.6}}>{b}</span></div>))}</div></div></div>);
 }
 
 function LenderChecklist(){
@@ -340,7 +340,7 @@ function LenderChecklist(){
     {cat:"Qualification",color:C.green,items:["What LTV limit do you offer? (80%? 85%? 90%?)","What minimum credit score do you require?","Do you verify income? What documents are needed?","Can I use this on a home with a co-borrower on the mortgage?","How long does the approval process take?"]},
     {cat:"Access & Features",color:C.textMid,items:["Can I set up direct deposit into the HELOC?","Is there a debit card or checkbook for drawing funds?","Can I transfer from HELOC to another account online instantly?","Can I convert any portion to a fixed-rate loan?","Do you freeze or reduce lines if home values drop?"]},
   ];
-  return(<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}><div style={{padding:"18px 22px",background:C.bg,borderBottom:`1px solid ${C.border}`}}><div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:5}}>// Lender Checklist — Michael Lush's Framework</div><div style={{fontSize:20,fontWeight:400,color:C.text,marginBottom:4}}>What to Ask Before Opening a HELOC</div><div style={{fontSize:13,color:C.textMid,marginBottom:8}}>Print this out before calling banks. These questions determine if a lender can actually support the strategy.</div><div style={{fontSize:12,color:C.amber,lineHeight:1.6}}>⚠ Lush's #1 rule: skip big national banks. Community banks and credit unions are far more likely to allow direct deposit into the HELOC — the single most important feature for making this strategy work.</div></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0}}>{questions.map((cat,ci)=>(<div key={ci} style={{padding:"18px 22px",borderRight:ci%2===0?`1px solid ${C.border}`:"none",borderBottom:ci<2?`1px solid ${C.border}`:"none"}}><div style={{fontSize:11,color:cat.color,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,fontWeight:700}}>{cat.cat}</div>{cat.items.map((item,ii)=>(<div key={ii} className="checklist-item"><div style={{width:16,height:16,border:`1.5px solid ${C.border}`,borderRadius:3,flexShrink:0,marginTop:1}}></div><span style={{fontSize:12,color:C.textMid,lineHeight:1.5}}>{item}</span></div>))}</div>))}</div><div style={{padding:"12px 20px",background:C.bg,borderTop:`1px solid ${C.border}`,fontSize:11,color:C.textDim}}><strong style={{color:C.textMid}}>Lush's advice:</strong> Call your local credit union first — better rates, fewer fees, and most likely to support direct deposit into the HELOC and sweep accounts. Compare at least 3 lenders. Most important question: can I direct deposit my paycheck into this HELOC?</div></div>);
+  return(<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}><div style={{padding:"18px 22px",background:C.bg,borderBottom:`1px solid ${C.border}`}}><div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:5}}>// Lender Checklist — Critical Questions</div><div style={{fontSize:20,fontWeight:400,color:C.text,marginBottom:4}}>What to Ask Before Opening a HELOC</div><div style={{fontSize:13,color:C.textMid,marginBottom:8}}>Print this out before calling banks. These questions determine if a lender can actually support the strategy.</div><div style={{fontSize:12,color:C.amber,lineHeight:1.6}}>⚠ Rule #1: skip big national banks. Community banks and credit unions are far more likely to allow direct deposit into the HELOC — the single most important feature for making this strategy work.</div></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0}}>{questions.map((cat,ci)=>(<div key={ci} style={{padding:"18px 22px",borderRight:ci%2===0?`1px solid ${C.border}`:"none",borderBottom:ci<2?`1px solid ${C.border}`:"none"}}><div style={{fontSize:11,color:cat.color,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,fontWeight:700}}>{cat.cat}</div>{cat.items.map((item,ii)=>(<div key={ii} className="checklist-item"><div style={{width:16,height:16,border:`1.5px solid ${C.border}`,borderRadius:3,flexShrink:0,marginTop:1}}></div><span style={{fontSize:13,color:C.textMid,lineHeight:1.6}}>{item}</span></div>))}</div>))}</div><div style={{padding:"12px 20px",background:C.bg,borderTop:`1px solid ${C.border}`,fontSize:11,color:C.textDim}}><strong style={{color:C.textMid}}>Best practice:</strong> Call your local credit union first — better rates, fewer fees, and most likely to support direct deposit into the HELOC and sweep accounts. Compare at least 3 lenders. Most important question: can I direct deposit my paycheck into this HELOC?</div></div>);
 }
 
 function RealtorChecklist(){
@@ -388,7 +388,7 @@ function RealtorChecklist(){
             {cat.items.map((item,ii)=>(
               <div key={ii} className="checklist-item">
                 <div style={{width:16,height:16,border:`1.5px solid ${C.border}`,borderRadius:3,flexShrink:0,marginTop:1}}></div>
-                <span style={{fontSize:12,color:C.textMid,lineHeight:1.5}}>{item}</span>
+                <span style={{fontSize:13,color:C.textMid,lineHeight:1.6}}>{item}</span>
               </div>
             ))}
           </div>
@@ -433,8 +433,68 @@ function StrategyExplainer({redrawPct,surplus,result}){
 }
 
 function FaqSection(){
-  const[open,setOpen]=useState(null);
-  return(<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}><div style={{padding:"18px 22px",borderBottom:`1px solid ${C.border}`,background:C.bg}}><div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:5}}>// FAQ — Based on Michael Lush's Teachings</div><div style={{fontSize:20,fontWeight:400,color:C.text,marginBottom:4}}>Frequently Asked Questions</div><div style={{fontSize:13,color:C.textMid}}>Answers drawn from Michael Lush's Replace Your Mortgage book and Replace Your University. For more, search Replace Your University on YouTube.</div></div>{FAQS.map((f,i)=>(<div key={i} className="faq-item"><div className="faq-q" onClick={()=>setOpen(open===i?null:i)}><span style={{paddingRight:16,lineHeight:1.4}}>{f.q}</span><span style={{color:C.accent,fontSize:18,fontFamily:"monospace",flexShrink:0}}>{open===i?"−":"+"}</span></div>{open===i&&<div className="faq-a fade-in">{f.a}</div>}</div>))}</div>);
+  const[active,setActive]=useState(0);
+  const cats=[
+    {label:"The Strategy",color:C.accent,icon:"🧠",ids:[0,1,2]},
+    {label:"How It Works",color:C.green,icon:"⚙️",ids:[3,4,5,6]},
+    {label:"Rates & Math",color:C.amber,icon:"📊",ids:[7,11]},
+    {label:"Risks",color:C.red,icon:"⚠️",ids:[8,9,10]},
+  ];
+  const[cat,setCat]=useState(0);
+  const visibleIds=cats[cat].ids;
+  const visibleFaqs=visibleIds.map(i=>FAQS[i]).filter(Boolean);
+  return(
+    <div style={{display:"grid",gridTemplateColumns:"220px 1fr",gap:0,background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden",minHeight:500}}>
+      {/* Left sidebar — categories */}
+      <div style={{background:C.bg,borderRight:`1px solid ${C.border}`,padding:"24px 0"}}>
+        <div style={{padding:"0 20px 20px",borderBottom:`1px solid ${C.border}`,marginBottom:16}}>
+          <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:4}}>// FAQ</div>
+          <div style={{fontSize:15,fontWeight:700,color:C.text,lineHeight:1.3}}>Common Questions</div>
+        </div>
+        {cats.map((ct,ci)=>(
+          <button key={ci} onClick={()=>{setCat(ci);setActive(cats[ci].ids[0]);}}
+            style={{width:"100%",textAlign:"left",padding:"12px 20px",background:cat===ci?ct.color+"18":"transparent",borderLeft:`3px solid ${cat===ci?ct.color:"transparent"}`,border:"none",cursor:"pointer",transition:"all 0.15s",marginBottom:2}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:18}}>{ct.icon}</span>
+              <div>
+                <div style={{fontSize:13,fontWeight:cat===ci?700:400,color:cat===ci?ct.color:C.textMid}}>{ct.label}</div>
+                <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace"}}>{ct.ids.length} questions</div>
+              </div>
+            </div>
+          </button>
+        ))}
+        <div style={{padding:"20px 20px 0",marginTop:16,borderTop:`1px solid ${C.border}`}}>
+          <div style={{fontSize:11,color:C.textDim,lineHeight:1.6}}>Honest answers to every question people have before starting.</div>
+        </div>
+      </div>
+      {/* Right — questions + answer */}
+      <div style={{display:"grid",gridTemplateRows:"auto 1fr"}}>
+        {/* Question list */}
+        <div style={{borderBottom:`1px solid ${C.border}`,background:C.surfaceAlt}}>
+          {visibleFaqs.map((f,i)=>{
+            const faqIdx=visibleIds[i];
+            return(
+              <button key={i} onClick={()=>setActive(faqIdx)}
+                style={{width:"100%",textAlign:"left",padding:"14px 22px",background:active===faqIdx?C.surface:"transparent",border:"none",borderBottom:`1px solid ${C.border}`,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,transition:"background 0.15s"}}>
+                <span style={{fontSize:13,color:active===faqIdx?C.text:C.textMid,fontWeight:active===faqIdx?700:400,lineHeight:1.4}}>{f.q}</span>
+                <span style={{color:cats[cat].color,fontSize:16,fontFamily:"monospace",flexShrink:0,opacity:active===faqIdx?1:0.4}}>{active===faqIdx?"▶":"▷"}</span>
+              </button>
+            );
+          })}
+        </div>
+        {/* Answer panel */}
+        <div style={{padding:"28px 28px",background:C.surface}}>
+          {FAQS[active]&&(
+            <div className="fade-in" key={active}>
+              <div style={{fontSize:10,color:cats[cat].color,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:10}}>{cats[cat].icon} {cats[cat].label}</div>
+              <div style={{fontSize:16,fontWeight:700,color:C.text,marginBottom:16,lineHeight:1.4}}>{FAQS[active].q}</div>
+              <div style={{fontSize:14,color:C.textMid,lineHeight:1.85,whiteSpace:"pre-wrap"}}>{FAQS[active].a}</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function plainEnglishRow(y,prevY,cycleLog){
@@ -582,13 +642,13 @@ function App(){
         <div style={{position:"absolute",top:-100,right:-100,width:400,height:400,background:`radial-gradient(circle,${C.accentGlow},transparent 70%)`,pointerEvents:"none"}}/>
         <div style={{position:"absolute",bottom:-60,left:80,width:250,height:250,background:"radial-gradient(circle,rgba(0,229,160,0.06),transparent 70%)",pointerEvents:"none"}}/>
         <div style={{maxWidth:1200,margin:"0 auto"}}>
-          <div style={{fontSize:10,color:C.accentDim,fontFamily:"monospace",letterSpacing:"0.25em",textTransform:"uppercase",marginBottom:12}}>HELOC Velocity Banking · Chunking Method · Based on Michael Lush's Replace Your Mortgage</div>
+          <div style={{fontSize:10,color:C.accentDim,fontFamily:"monospace",letterSpacing:"0.25em",textTransform:"uppercase",marginBottom:12}}>HELOC Velocity Banking · The Chunking Method · Mortgage Acceleration Strategy</div>
           <h1 style={{fontSize:38,fontWeight:400,color:C.text,margin:"0 0 8px",letterSpacing:"-0.02em",lineHeight:1.15}}>Mortgage Acceleration <span style={{color:C.accent,fontWeight:700}}>Calculator</span></h1>
           <p style={{fontSize:17,color:C.textMid,marginBottom:32,fontWeight:400}}>Model the HELOC velocity banking strategy on your actual numbers — see how much interest you save and how many years you eliminate.</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:28}}>
             {[
               {icon:"😤",label:"The Problem",color:C.red,lines:["Banks designed mortgages to front-load your payments with interest. In the first 5 years of a $300k loan, 78% of every payment goes to interest — not principal.","The 30-year mortgage was invented to separate you from your cash and grow bank deposits. You pay for the home 2–3× over by the end."]},
-              {icon:"💡",label:"The Strategy — Chunking",color:C.accent,lines:["Michael Lush calls it 'chunking.' Draw a lump sum from a HELOC and slam it onto your mortgage principal. Use the HELOC as your checking account so every paycheck immediately reduces its balance.","Repeat the cycles. Each chunk eliminates years of front-loaded interest that would have compounded for decades."]},
+              {icon:"💡",label:"The Strategy — Chunking",color:C.accent,lines:["The strategy is called chunking. Draw a lump sum from a HELOC and slam it onto your mortgage principal. Use the HELOC as your checking account so every paycheck immediately reduces its balance.","Repeat the cycles. Each chunk eliminates years of front-loaded interest that would have compounded for decades."]},
               {icon:"🏁",label:"The Result",color:C.green,lines:["Same income. Same expenses. Different routing. The mortgage is gone in 5–7 years for most people.","Your money stays fully liquid in the HELOC the entire time — accessible 24/7 for emergencies or opportunities."]},
             ].map(({icon,label,color,lines})=>(
               <div key={label} style={{background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderTop:`3px solid ${color}`,borderRadius:10,padding:"20px 20px"}}>
@@ -896,19 +956,34 @@ function App(){
           </div>
           {/* ── TOP ROW: Verdict + Strategy Settings side by side ── */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16,alignItems:"start"}}>
-            {/* Verdict */}
-            <div style={{background:vc.bg,border:`1px solid ${vc.color}44`,borderLeft:`4px solid ${vc.color}`,borderRadius:10,padding:"16px 20px",display:"flex",alignItems:"flex-start",gap:14}}>
-              <span style={{fontSize:30,lineHeight:1,flexShrink:0}}>{vc.icon}</span>
-              <div style={{flex:1}}>
-                <div style={{fontSize:12,fontFamily:"monospace",fontWeight:700,color:vc.color,letterSpacing:"0.1em",marginBottom:4}}>VELOCITY BANKING ANALYSIS: {vc.label}</div>
-                <div style={{fontSize:12,color:C.textMid,lineHeight:1.6,marginBottom:result?6:0}}>{vc.sub}</div>
-                {result&&<div style={{fontSize:11,color:C.textDim,lineHeight:1.5}}>Saves <span style={{color:C.green,fontWeight:700}}>{fmt(result.interestSavedVsBaseline)}</span> vs standard amortization · {result.extraCostVsDirect>0?<span>Costs <span style={{color:C.amber}}>{fmt(result.extraCostVsDirect)}</span> more than locking cash into equity — but keeps full liquidity</span>:<span><span style={{color:C.green}}>{fmt(Math.abs(result.extraCostVsDirect))} cheaper</span> than direct extra payments AND preserves liquidity</span>}</div>}
+            {/* Verdict — BIG signal light */}
+            <div style={{background:`linear-gradient(135deg,${vc.color}18,${vc.color}08)`,border:`2px solid ${vc.color}66`,borderRadius:12,padding:"22px 24px",position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",top:-30,right:-30,width:140,height:140,borderRadius:"50%",background:vc.color+"12",pointerEvents:"none"}}/>
+              <div style={{display:"flex",alignItems:"flex-start",gap:16}}>
+                <div style={{width:64,height:64,borderRadius:12,background:vc.color+"25",border:`2px solid ${vc.color}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,flexShrink:0}}>{vc.icon}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:10,color:vc.color,fontFamily:"monospace",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:4}}>// Velocity Banking Analysis</div>
+                  <div style={{fontSize:22,fontWeight:800,color:vc.color,marginBottom:6,letterSpacing:"-0.01em"}}>{vc.label}</div>
+                  <div style={{fontSize:14,color:C.textMid,lineHeight:1.65,marginBottom:result?12:0}}>{vc.sub}</div>
+                  {result&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                    <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 14px"}}>
+                      <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Interest Eliminated</div>
+                      <div style={{fontSize:20,fontFamily:"monospace",fontWeight:800,color:C.green}}>{fmt(result.interestSavedVsBaseline)}</div>
+                      <div style={{fontSize:11,color:C.textDim,marginTop:2}}>vs standard amortization</div>
+                    </div>
+                    <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 14px"}}>
+                      <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Years Cut</div>
+                      <div style={{fontSize:20,fontFamily:"monospace",fontWeight:800,color:vc.color}}>{mo(result.baseline.months - result.months)}</div>
+                      <div style={{fontSize:11,color:C.textDim,marginTop:2}}>{mo(result.months)} vs {mo(result.baseline.months)}</div>
+                    </div>
+                  </div>}
+                </div>
               </div>
             </div>
             {/* Strategy Settings */}
             {result?<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px 18px"}}>
               <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:14,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>// Chunk Size Per Cycle <InfoTip text="Controls how much equity you draw onto the mortgage each cycle. 25% is the sweet spot for most — keeps HELOC balances small so average daily balance stays low. At low mortgage rates (3–4%), go lower (10–15%). At 6%+, you can go higher."/></div>
-              <SliderInput label="Equity Drawn Per Cycle (Chunk Size)" value={redrawPct} min={0.10} max={1.0} step={0.05} onChange={setRedrawPct} format={v=>Math.round(v*100)+"%"} tip="Lush's 'chunking' — what % of available HELOC ceiling gets slammed onto the mortgage each cycle. Lower % = smaller HELOC balance = less daily interest. The sweet spot is usually 25%."/>
+              <SliderInput label="Equity Drawn Per Cycle (Chunk Size)" value={redrawPct} min={0.10} max={1.0} step={0.05} onChange={setRedrawPct} format={v=>Math.round(v*100)+"%"} tip="Chunking — what % of available HELOC ceiling gets applied to the mortgage each cycle. Lower % = smaller HELOC balance = less daily interest. The sweet spot is usually 25%."/>
               <StrategyExplainer redrawPct={redrawPct} surplus={surplus} result={result}/>
             </div>:<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:24,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:C.textDim,fontFamily:"monospace",fontSize:12}}>Enter your numbers in the Calculator tab to see results</span></div>}
           </div>
