@@ -137,10 +137,34 @@ function Label({children,tip}){
 function SliderInput({label,value,min,max,step,onChange,format,hint,tip}){
   return(<div style={{marginBottom:18}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:5,alignItems:"center"}}><Label tip={tip}>{label}</Label><span style={{fontSize:13,color:C.accent,fontFamily:"monospace",fontWeight:700}}>{format(value)}</span></div><input type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))}/>{hint&&<div style={{fontSize:10,color:C.textDim,marginTop:3}}>{hint}</div>}</div>);
 }
+function useNumberInput(value,onChange){
+  const[raw,setRaw]=useState(value===0?"":String(value));
+  // Only sync from parent when it's a programmatic change (not user typing)
+  const isFocused=React.useRef(false);
+  useEffect(()=>{if(!isFocused.current){setRaw(value===0?"":String(value));}},[value]);
+  const handleFocus=()=>{isFocused.current=true;};
+  // While typing: only update local display, never call onChange
+  const handleChange=e=>{setRaw(e.target.value);};
+  // On blur: commit the value to parent
+  const handleBlur=e=>{
+    isFocused.current=false;
+    const n=parseFloat(e.target.value);
+    if(isNaN(n)||n<0){setRaw("");onChange(0);}
+    else{setRaw(String(n));onChange(n);}
+  };
+  return{raw,handleFocus,handleChange,handleBlur};
+}
 function NumInput({label,value,onChange,tip,prefix="$"}){
-  const[raw,setRaw]=useState(String(value));
-  useEffect(()=>setRaw(String(value)),[value]);
-  return(<div style={{marginBottom:14}}><Label tip={tip}>{label}</Label><div style={{display:"flex",alignItems:"center",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,overflow:"hidden"}}><span style={{padding:"8px 10px",color:C.textDim,fontFamily:"monospace",fontSize:13,borderRight:`1px solid ${C.border}`}}>{prefix}</span><input type="number" value={raw} onChange={e=>{setRaw(e.target.value);const n=Number(e.target.value);if(!isNaN(n)&&n>=0)onChange(n);}} style={{flex:1,background:"transparent",border:"none",outline:"none",padding:"8px 10px",color:C.text,fontFamily:"monospace",fontSize:14}}/></div></div>);
+  const{raw,handleFocus,handleChange,handleBlur}=useNumberInput(value,onChange);
+  return(<div style={{marginBottom:14}}><Label tip={tip}>{label}</Label><div style={{display:"flex",alignItems:"center",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,overflow:"hidden"}}><span style={{padding:"8px 10px",color:C.textDim,fontFamily:"monospace",fontSize:13,borderRight:`1px solid ${C.border}`}}>{prefix}</span><input type="text" inputMode="decimal" value={raw} onFocus={handleFocus} onChange={handleChange} onBlur={handleBlur} style={{flex:1,background:"transparent",border:"none",outline:"none",padding:"8px 10px",color:C.text,fontFamily:"monospace",fontSize:14}}/></div></div>);
+}
+function ExpenseRow({label,value,onChange,tip}){
+  const{raw,handleFocus,handleChange,handleBlur}=useNumberInput(value,onChange);
+  return(<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><div style={{flex:1,fontSize:12,color:C.textMid,display:"flex",alignItems:"center",gap:4}}>{label}{tip&&<InfoTip text={tip}/>}</div><div style={{display:"flex",alignItems:"center",background:C.bg,border:`1px solid ${C.border}`,borderRadius:5,overflow:"hidden",width:110}}><span style={{padding:"5px 7px",color:C.textDim,fontFamily:"monospace",fontSize:12,borderRight:`1px solid ${C.border}`}}>$</span><input type="text" inputMode="decimal" value={raw} onFocus={handleFocus} onChange={handleChange} onBlur={handleBlur} style={{flex:1,background:"transparent",border:"none",outline:"none",padding:"5px 7px",color:C.text,fontFamily:"monospace",fontSize:12,width:60}}/></div></div>);
+}
+function DollarInput({value,onChange,suffix}){
+  const{raw,handleFocus,handleChange,handleBlur}=useNumberInput(value,onChange);
+  return(<div style={{display:"flex",alignItems:"center",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,overflow:"hidden"}}><span style={{padding:"7px 9px",color:C.textDim,fontFamily:"monospace",fontSize:12,borderRight:`1px solid ${C.border}`}}>$</span><input type="text" inputMode="decimal" value={raw} onFocus={handleFocus} onChange={handleChange} onBlur={handleBlur} style={{flex:1,background:"transparent",border:"none",outline:"none",padding:"7px 9px",color:C.text,fontFamily:"monospace",fontSize:13}}/>{suffix&&<span style={{padding:"7px 9px",color:C.textDim,fontFamily:"monospace",fontSize:10,borderLeft:`1px solid ${C.border}`}}>{suffix}</span>}</div>);
 }
 function Card({label,value,sub,color=C.accent}){
   return(<div style={{background:C.surfaceAlt,border:`1px solid ${C.border}`,borderTop:`2px solid ${color}`,borderRadius:10,padding:"14px 16px"}}><div style={{fontSize:10,color:C.textMid,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"monospace",marginBottom:5}}>{label}</div><div style={{fontSize:20,fontWeight:800,color,fontFamily:"monospace"}}>{value}</div>{sub&&<div style={{fontSize:10,color:C.textDim,marginTop:3,lineHeight:1.4}}>{sub}</div>}</div>);
@@ -286,135 +310,407 @@ function plainEnglishRow(y,prevY,cycleLog){
   return parts.join(" · ")||"Steady progress — HELOC paying down from monthly surplus";
 }
 
+
 function App(){
-  const[mortgageBal,setMortgageBal]=useState(377157);
-  const[mortgageRate,setMortgageRate]=useState(3.25);
-  const[mortgagePmt,setMortgagePmt]=useState(1855);
-  const[remainingYears,setRemainingYears]=useState(25);
-  const[homeValue,setHomeValue]=useState(600000);
-  const[helocRate,setHelocRate]=useState(7.0);
+  // Mortgage
+  const[mortgageBal,setMortgageBal]=useState(300000);
+  const[mortgageRate,setMortgageRate]=useState(6.5);
+  const[pmtMode,setPmtMode]=useState("pi");
+  const[mortgagePmt,setMortgagePmt]=useState(1896);
+  const[totalPmt,setTotalPmt]=useState(2246);
+  // Property tax — monthly/annual/escrow
+  const[propTaxMode,setPropTaxMode]=useState("monthly");  // monthly|annual|escrow
+  const[propTaxMonthly,setPropTaxMonthly]=useState(0);
+  const[propTaxAnnual,setPropTaxAnnual]=useState(0);
+  // Home insurance — monthly/annual/escrow
+  const[insurMode,setInsurMode]=useState("monthly");      // monthly|annual|escrow
+  const[insurMonthly,setInsurMonthly]=useState(0);
+  const[insurAnnual,setInsurAnnual]=useState(0);
+  const[remainingYears,setRemainingYears]=useState(28);
+  const[homeValue,setHomeValue]=useState(400000);
+  // HELOC
+  const[helocRate,setHelocRate]=useState(8.5);
   const[ltvLimit,setLtvLimit]=useState(80);
   const[appreciationRate,setAppreciationRate]=useState(3);
-  const[helocOrigination,setHelocOrigination]=useState(300);
-  const[helocAnnual,setHelocAnnual]=useState(75);
-  const[monthlyIncome,setMonthlyIncome]=useState(10000);
-  const[livingExpenses,setLivingExpenses]=useState(4000);
-  const[monthlyDebts,setMonthlyDebts]=useState(800);
-  const[savings,setSavings]=useState(25000);
+  const[helocOrigination,setHelocOrigination]=useState(0);
+  const[helocAnnual,setHelocAnnual]=useState(0);
+  const[showHelocFees,setShowHelocFees]=useState(false);
+  // Income
+  const[primaryIncome,setPrimaryIncome]=useState(0);
+  const[secondaryIncome,setSecondaryIncome]=useState(0);
+  const[otherIncome,setOtherIncome]=useState(0);
+  // Expense mode
+  const[expenseMode,setExpenseMode]=useState("simple");
+  const[totalExpensesSimple,setTotalExpensesSimple]=useState(0);
+  // Detailed expenses
+  const[carPayments,setCarPayments]=useState(0);
+  const[studentLoans,setStudentLoans]=useState(0);
+  const[otherDebts,setOtherDebts]=useState(0);
+  const[groceries,setGroceries]=useState(0);
+  const[diningOut,setDiningOut]=useState(0);
+  const[utilities,setUtilities]=useState(0);
+  const[gas,setGas]=useState(0);
+  const[carInsurance,setCarInsurance]=useState(0);
+  const[subscriptions,setSubscriptions]=useState(0);
+  const[childcare,setChildcare]=useState(0);
+  const[medicalPharmacy,setMedicalPharmacy]=useState(0);
+  const[clothing,setClothing]=useState(0);
+  const[homeRepairs,setHomeRepairs]=useState(0);
+  const[entertainment,setEntertainment]=useState(0);
+  const[petCosts,setPetCosts]=useState(0);
+  const[miscellaneous,setMiscellaneous]=useState(0);
+  // Savings
+  const[savings,setSavings]=useState(0);
+  // Strategy
   const[redrawPct,setRedrawPct]=useState(0.25);
-  const[tab,setTab]=useState("overview");
-  const[showLearn,setShowLearn]=useState(false);
+  // UI
+  const[openGroups,setOpenGroups]=useState({});
+  const toggleGroup=key=>setOpenGroups(g=>({...g,[key]:!g[key]}));
+  const[openSections,setOpenSections]=useState({"mortgage":true});
+  const toggleSection=key=>setOpenSections(s=>({...s,[key]:!s[key]}));
+  const[tab,setTab]=useState("year-by-year");
   const[activeSection,setActiveSection]=useState("calculator");
+  // Derived
+  const propTax = propTaxMode==="escrow"?0 : propTaxMode==="annual"?propTaxAnnual/12 : propTaxMonthly;
+  const homeInsur = insurMode==="escrow"?0 : insurMode==="annual"?insurAnnual/12 : insurMonthly;
+  const taxInsurance = propTax + homeInsur;
+  const piOnly = pmtMode==="total"?Math.max(0,totalPmt-taxInsurance):mortgagePmt;
+
+  // Derived totals
+  const monthlyIncome=primaryIncome+secondaryIncome+otherIncome;
+  const monthlyDebts=carPayments+studentLoans+otherDebts;
+  const detailedExpenses=groceries+diningOut+utilities+gas+carInsurance+subscriptions+childcare+medicalPharmacy+clothing+homeRepairs+entertainment+petCosts+miscellaneous+monthlyDebts;
+  const livingExpenses=expenseMode==="simple"?totalExpensesSimple:detailedExpenses;
+  const totalMonthlyOut=piOnly+taxInsurance+livingExpenses;
+  const surplus=monthlyIncome-totalMonthlyOut;
 
   const helocFees={origination:helocOrigination,annual:helocAnnual};
-  const params={mortgageBal,mortgageRate,mortgagePmt,homeValue,helocRate,monthlyIncome,livingExpenses,monthlyDebts,savings,redrawPct,ltvLimit,appreciationRate,helocFees,remainingYears};
+  const params={mortgageBal,mortgageRate,mortgagePmt:piOnly+taxInsurance,homeValue,helocRate,monthlyIncome,livingExpenses:livingExpenses+taxInsurance,monthlyDebts:expenseMode==="simple"?0:monthlyDebts,savings,redrawPct,ltvLimit,appreciationRate,helocFees,remainingYears};
   const result=simulate(params);
-  const surplus=monthlyIncome-livingExpenses-mortgagePmt-monthlyDebts;
 
   const verdict=!result?"no_equity":result.interestSavedVsBaseline>80000?"strongly_yes":result.interestSavedVsBaseline>30000?"yes":result.interestSavedVsBaseline>5000?"maybe":"no";
-  const vc={strongly_yes:{label:"HIGHLY RECOMMENDED",color:C.green,bg:C.greenDim,icon:"⚡",sub:"Velocity banking is a strong fit. Significant interest savings while keeping money fully accessible."},yes:{label:"RECOMMENDED",color:C.green,bg:C.greenDim,icon:"✓",sub:"Good candidate. Meaningful interest savings with full liquidity maintained throughout."},maybe:{label:"MARGINAL BENEFIT",color:C.amber,bg:C.amberDim,icon:"~",sub:"Some benefit, but modest. Worth exploring if liquidity matters more than minimizing total interest."},no:{label:"LIMITED BENEFIT",color:C.red,bg:C.redDim,icon:"✗",sub:"Rate spread is unfavorable. Direct extra payments may serve you better. Run the comparison tab."},no_equity:{label:"INSUFFICIENT EQUITY",color:C.textDim,bg:"#111",icon:"—",sub:"You need more home equity to open a HELOC. Adjust LTV limit or home value to explore future scenarios."}}[verdict];
+  const vc={
+    strongly_yes:{label:"HIGHLY RECOMMENDED",color:C.green,bg:C.greenDim,icon:"⚡",sub:"Velocity banking is a strong fit. Significant interest savings while keeping money fully accessible."},
+    yes:{label:"RECOMMENDED",color:C.green,bg:C.greenDim,icon:"✓",sub:"Good candidate. Meaningful interest savings with full liquidity maintained throughout."},
+    maybe:{label:"MARGINAL BENEFIT",color:C.amber,bg:C.amberDim,icon:"~",sub:"Some benefit, but modest. Worth it if liquidity matters more than minimizing total interest."},
+    no:{label:"LIMITED BENEFIT",color:C.red,bg:C.redDim,icon:"✗",sub:"Rate spread is unfavorable. Direct extra payments may serve you better. Check the Comparison tab."},
+    no_equity:{label:"INSUFFICIENT EQUITY",color:C.textDim,bg:"#111",icon:"—",sub:"Not enough home equity for a HELOC at this LTV. Adjust home value or LTV limit to explore."}
+  }[verdict];
 
-  const navItems=["calculator","learn","lender","risk","faq"];
+
+
+
+  const expenseGroups=[
+    {label:"Utilities & Services",color:C.accent,tip:"",rows:[
+      {label:"Electric, gas, water, trash",value:utilities,set:setUtilities,tip:"All combined utility bills monthly."},
+      {label:"Phone & internet",value:subscriptions,set:setSubscriptions,tip:"Cell plans, home internet, streaming, gym, software subscriptions. List them — they add up fast."},
+    ]},
+    {label:"Debt Payments",color:C.red,tip:"Fixed monthly obligations — do NOT include your mortgage here.",rows:[
+      {label:"Car payment(s)",value:carPayments,set:setCarPayments,tip:"All auto loan payments combined."},
+      {label:"Student loans",value:studentLoans,set:setStudentLoans,tip:"Federal and private student loan monthly payments."},
+      {label:"Other loans / debt",value:otherDebts,set:setOtherDebts,tip:"Personal loans, credit card minimums, medical payment plans, etc."},
+    ]},
+    {label:"Food & Dining",color:C.amber,tip:"",rows:[
+      {label:"Groceries",value:groceries,set:setGroceries,tip:"Supermarket and grocery delivery — monthly total."},
+      {label:"Dining out / takeout / coffee",value:diningOut,set:setDiningOut,tip:"Restaurants, delivery apps, coffee shops. Most people underestimate this — check your last 2 months of statements."},
+    ]},
+    {label:"Transportation",color:C.amber,tip:"",rows:[
+      {label:"Gas / fuel",value:gas,set:setGas,tip:"Monthly fuel costs. Include EV charging if applicable."},
+      {label:"Car insurance",value:carInsurance,set:setCarInsurance,tip:"Total auto insurance premium divided by 12."},
+    ]},
+    {label:"Family & Health",color:C.green,tip:"",rows:[
+      {label:"Childcare / school / activities",value:childcare,set:setChildcare,tip:"Daycare, after-school programs, tuition, sports, music lessons, etc."},
+      {label:"Medical / pharmacy / copays",value:medicalPharmacy,set:setMedicalPharmacy,tip:"Out-of-pocket costs not covered by insurance. Use a monthly average of the past year."},
+      {label:"Pet costs",value:petCosts,set:setPetCosts,tip:"Food, vet, grooming, boarding — monthly average."},
+    ]},
+    {label:"Lifestyle & Home",color:C.textMid,tip:"",rows:[
+      {label:"Clothing & personal care",value:clothing,set:setClothing,tip:"Clothes, shoes, haircuts, toiletries, etc."},
+      {label:"Home repairs & maintenance",value:homeRepairs,set:setHomeRepairs,tip:"Monthly reserve. Rule of thumb: 1% of home value per year ÷ 12."},
+      {label:"Entertainment & hobbies",value:entertainment,set:setEntertainment,tip:"Movies, concerts, sports, hobbies, vacations divided by 12."},
+      {label:"Miscellaneous / buffer",value:miscellaneous,set:setMiscellaneous,tip:"Gifts, unexpected costs, everything else. A buffer keeps your surplus realistic — don't skip this."},
+    ]},
+  ];
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"Georgia,serif",paddingBottom:80}}>
 
       {/* HERO */}
-      <div style={{background:"linear-gradient(135deg,#060a14 0%,#0d1929 60%,#0a1520 100%)",borderBottom:`1px solid ${C.border}`,padding:"40px 28px 36px",position:"relative",overflow:"hidden"}}>
+      <div style={{background:"linear-gradient(135deg,#060a14 0%,#0d1929 60%,#0a1520 100%)",borderBottom:`1px solid ${C.border}`,padding:"44px 28px 40px",position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:-100,right:-100,width:400,height:400,background:`radial-gradient(circle,${C.accentGlow},transparent 70%)`,pointerEvents:"none"}}/>
         <div style={{position:"absolute",bottom:-60,left:80,width:250,height:250,background:"radial-gradient(circle,rgba(0,229,160,0.06),transparent 70%)",pointerEvents:"none"}}/>
-        <div style={{maxWidth:1160,margin:"0 auto"}}>
-          <div style={{fontSize:10,color:C.accentDim,fontFamily:"monospace",letterSpacing:"0.25em",textTransform:"uppercase",marginBottom:10}}>Velocity Banking · Mortgage Acceleration Strategy</div>
-          <h1 style={{fontSize:36,fontWeight:400,color:C.text,margin:"0 0 10px",letterSpacing:"-0.02em",lineHeight:1.2}}>Pay Off Your Mortgage in <span style={{color:C.accent,fontWeight:700}}>Half the Time</span><br/><span style={{fontSize:24,color:C.textMid,fontWeight:400}}>While Keeping Your Money Accessible</span></h1>
-          <div style={{maxWidth:780,marginBottom:22}}>
-            <p style={{fontSize:15,color:C.textMid,lineHeight:1.8,marginBottom:12}}>Most people spend 30 years slowly paying down their mortgage while handing over hundreds of thousands in interest. There is a better way — and it doesn't require earning more money or cutting your lifestyle.</p>
-            <p style={{fontSize:15,color:C.textMid,lineHeight:1.8,marginBottom:12}}><strong style={{color:C.text}}>Velocity banking</strong> uses a Home Equity Line of Credit (HELOC) as your primary bank account. Every paycheck reduces the HELOC balance. Large lump-sum draws eliminate mortgage principal in chunks. Your mortgage — which front-loads interest payments in the early years — collapses in years instead of decades.</p>
-            <p style={{fontSize:15,color:C.textMid,lineHeight:1.8}}>The result: the same money you're spending today, routed differently, can pay off your mortgage <strong style={{color:C.text}}>10–15 years early</strong> and save you <strong style={{color:C.green}}>tens or hundreds of thousands</strong> in interest — while your cash stays <strong style={{color:C.text}}>fully accessible</strong> the entire time.</p>
+        <div style={{maxWidth:1200,margin:"0 auto"}}>
+          <div style={{fontSize:10,color:C.accentDim,fontFamily:"monospace",letterSpacing:"0.25em",textTransform:"uppercase",marginBottom:12}}>Velocity Banking · Mortgage Acceleration Strategy</div>
+          <h1 style={{fontSize:38,fontWeight:400,color:C.text,margin:"0 0 8px",letterSpacing:"-0.02em",lineHeight:1.15}}>Pay Off Your Mortgage in <span style={{color:C.accent,fontWeight:700}}>Half the Time</span></h1>
+          <p style={{fontSize:17,color:C.textMid,marginBottom:32,fontWeight:400}}>While keeping every dollar of your money accessible.</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14,marginBottom:28}}>
+            {[
+              {icon:"😤",label:"The Problem",color:C.red,lines:["Your mortgage front-loads interest. In year one of a $400k loan at 6%, over half your payment is pure interest — not principal.","30 years of that math means you pay 2–3× the home's value in total by the end."]},
+              {icon:"💡",label:"The Strategy",color:C.accent,lines:["Use a HELOC as your checking account. Every paycheck reduces the balance — cutting the daily interest you're charged.","Periodic lump-sum draws knock out mortgage principal in large chunks, eliminating years of future interest at once."]},
+              {icon:"🏁",label:"The Result",color:C.green,lines:["Same income. Same expenses. Different routing. Mortgage gone 10–15 years early.","Your money stays fully accessible in the HELOC the entire time — not locked in equity."]},
+            ].map(({icon,label,color,lines})=>(
+              <div key={label} style={{background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderTop:`3px solid ${color}`,borderRadius:10,padding:"20px 20px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+                  <span style={{fontSize:20}}>{icon}</span>
+                  <span style={{fontSize:11,color,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700}}>{label}</span>
+                </div>
+                {lines.map((l,i)=>(
+                  <div key={i} style={{display:"flex",gap:8,marginBottom:i<lines.length-1?10:0,alignItems:"flex-start"}}>
+                    <span style={{color,fontSize:10,marginTop:4,flexShrink:0}}>▸</span>
+                    <span style={{fontSize:13,color:C.textMid,lineHeight:1.65}}>{l}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
-          <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:22}}>
-            {[["⚡","No extra income required"],["🔄","Same money, smarter routing"],["💧","Full liquidity maintained"],["📈","Home appreciation accelerates it"],["🏦","Works with any HELOC lender"]].map(([icon,text])=>(<div key={text} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:20,padding:"5px 12px",fontSize:11,color:C.textMid,fontFamily:"monospace"}}><span>{icon}</span><span>{text}</span></div>))}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0,background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderRadius:10,marginBottom:28,overflow:"hidden"}}>
+            {[["No extra income needed","Route the money you already earn"],["Full liquidity, always","HELOC stays open and accessible"],["Saves $50k–$200k+","Depending on your rate and balance"],["Works at any bank","Any lender that offers a HELOC"]].map(([title,sub],i,arr)=>(
+              <div key={title} style={{padding:"14px 18px",borderRight:i<arr.length-1?`1px solid ${C.border}`:"none"}}>
+                <div style={{fontSize:13,color:C.text,fontWeight:700,marginBottom:3}}>{title}</div>
+                <div style={{fontSize:11,color:C.textDim}}>{sub}</div>
+              </div>
+            ))}
           </div>
           <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>setActiveSection("calculator")} style={{padding:"10px 22px",background:C.accent,color:C.bg,border:"none",borderRadius:8,fontFamily:"monospace",fontSize:12,fontWeight:700,cursor:"pointer",letterSpacing:"0.05em",textTransform:"uppercase"}}>Run My Numbers →</button>
-            <button onClick={()=>{setShowLearn(!showLearn);setActiveSection("learn");}} style={{padding:"10px 22px",background:"transparent",color:C.accent,border:`1px solid ${C.accent}44`,borderRadius:8,fontFamily:"monospace",fontSize:12,fontWeight:700,cursor:"pointer",letterSpacing:"0.05em",textTransform:"uppercase"}}>{showLearn?"Hide Explainer":"How Does It Work?"}</button>
+            <button onClick={()=>setActiveSection("calculator")} style={{padding:"11px 24px",background:C.accent,color:C.bg,border:"none",borderRadius:8,fontFamily:"monospace",fontSize:12,fontWeight:700,cursor:"pointer",letterSpacing:"0.05em",textTransform:"uppercase"}}>Run My Numbers →</button>
+            <button onClick={()=>setActiveSection("learn")} style={{padding:"11px 24px",background:"transparent",color:C.accent,border:`1px solid ${C.accent}44`,borderRadius:8,fontFamily:"monospace",fontSize:12,fontWeight:700,cursor:"pointer",letterSpacing:"0.05em",textTransform:"uppercase"}}>How Does It Work?</button>
           </div>
         </div>
       </div>
 
       {/* NAV */}
       <div style={{borderBottom:`1px solid ${C.border}`,background:C.surface,position:"sticky",top:0,zIndex:50}}>
-        <div style={{maxWidth:1160,margin:"0 auto",padding:"0 28px",display:"flex",gap:0}}>
-          {[["calculator","🧮 Calculator"],["learn","📖 How It Works"],["lender","🏦 Checklists"],["risk","⚠️ Risk Scenarios"],["faq","❓ FAQ"]].map(([key,label])=>(<button key={key} onClick={()=>setActiveSection(key)} style={{padding:"14px 18px",background:"transparent",border:"none",borderBottom:`2px solid ${activeSection===key?C.accent:"transparent"}`,cursor:"pointer",fontFamily:"monospace",fontSize:11,color:activeSection===key?C.accent:C.textMid,letterSpacing:"0.05em",textTransform:"uppercase",transition:"all 0.15s",whiteSpace:"nowrap"}}>{label}</button>))}
+        <div style={{maxWidth:1200,margin:"0 auto",padding:"0 28px",display:"flex",gap:0}}>
+          {[["calculator","🧮 Calculator"],["learn","📖 How It Works"],["lender","🏦 Checklists"],["risk","⚠️ Risk Scenarios"],["faq","❓ FAQ"]].map(([key,label])=>(
+            <button key={key} onClick={()=>setActiveSection(key)} style={{padding:"14px 18px",background:"transparent",border:"none",borderBottom:`2px solid ${activeSection===key?C.accent:"transparent"}`,cursor:"pointer",fontFamily:"monospace",fontSize:11,color:activeSection===key?C.accent:C.textMid,letterSpacing:"0.05em",textTransform:"uppercase",transition:"all 0.15s",whiteSpace:"nowrap"}}>{label}</button>
+          ))}
         </div>
       </div>
 
-      <div style={{maxWidth:1160,margin:"0 auto",padding:"28px 28px"}}>
+      <div style={{maxWidth:1200,margin:"0 auto",padding:"28px 28px"}}>
 
-        {/* LEARN */}
         {activeSection==="learn"&&<div className="fade-in" style={{display:"flex",flexDirection:"column",gap:20}}><HowItWorks/><WhoIsThisFor/></div>}
-
-        {/* LENDER */}
         {activeSection==="lender"&&<div className="fade-in"><LenderChecklist/><RealtorChecklist/></div>}
-
-        {/* RISK */}
         {activeSection==="risk"&&<div className="fade-in" style={{display:"flex",flexDirection:"column",gap:20}}><RiskScenarios baseResult={result} params={params}/><BreakevenChart result={result}/></div>}
-
-        {/* FAQ */}
         {activeSection==="faq"&&<div className="fade-in"><FaqSection/></div>}
 
-        {/* CALCULATOR */}
-        {activeSection==="calculator"&&<div style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:24}}>
+        {activeSection==="calculator"&&<div style={{display:"grid",gridTemplateColumns:"400px 1fr",gap:28}}>
 
-          {/* LEFT INPUTS */}
+          {/* ── LEFT COLUMN ── */}
           <div>
-            <Section title="Mortgage Details" tip="Find these on your monthly statement or mortgage portal.">
-              <NumInput label="Current Mortgage Balance" value={mortgageBal} onChange={setMortgageBal} tip="The remaining principal you owe. Find it on your monthly statement."/>
-              <SliderInput label="Mortgage Interest Rate" value={mortgageRate} min={2} max={9} step={0.05} onChange={setMortgageRate} format={v=>v.toFixed(2)+"%"} hint="US 30yr fixed avg ~6.8% as of 2025" tip="Your annual mortgage rate. Check your loan documents or statement."/>
-              <NumInput label="Monthly Payment (P+I only)" value={mortgagePmt} onChange={setMortgagePmt} tip="Principal + interest only — not including tax or insurance escrow if bundled."/>
-              <SliderInput label="Years Remaining on Mortgage" value={remainingYears} min={1} max={30} step={1} onChange={setRemainingYears} format={v=>v+"y"} hint="How many years left until your mortgage matures" tip="Remaining term affects how much front-loaded interest remains. More years left = more to save."/>
-              <NumInput label="Current Home Value" value={homeValue} onChange={setHomeValue} tip="Use Zillow, Redfin, or a recent appraisal. Be conservative — lenders will appraise the home before issuing a HELOC."/>
-            </Section>
 
-            <Section title="HELOC Settings" tip="A HELOC lets you borrow against home equity up to the LTV limit. You only pay interest on what you borrow.">
-              <SliderInput label="HELOC Interest Rate" value={helocRate} min={4} max={13} step={0.25} onChange={setHelocRate} format={v=>v.toFixed(2)+"%"} hint="Call your lender. Usually Prime + 0–2%. Credit unions often lower." tip="The single most important input. A lower HELOC rate makes the strategy significantly more powerful. Shop multiple lenders before accepting any offer."/>
-              <SliderInput label="LTV Limit" value={ltvLimit} min={60} max={90} step={5} onChange={setLtvLimit} format={v=>v+"%"} hint="80% standard. Some credit unions offer 85–90%." tip="Your mortgage + HELOC combined cannot exceed this % of home value. 80% is the industry standard. Ask your lender what they offer."/>
-              <SliderInput label="Home Appreciation Rate" value={appreciationRate} min={0} max={8} step={0.5} onChange={setAppreciationRate} format={v=>v.toFixed(1)+"%/yr"} hint="US average ~3–4%/yr. High-growth markets 5–7%." tip="As your home appreciates, your HELOC ceiling grows even without paying down the mortgage. This allows larger draws each cycle. Set to 0% for a conservative no-growth scenario."/>
-              <LTVVisual homeValue={homeValue} mortgageBal={mortgageBal} ltvLimit={ltvLimit}/>
-            </Section>
+            {/* helper */}
+            {(()=>{
+              const Accordion=({id,title,summary,children})=>{
+                const open=!!openSections[id];
+                return(
+                  <div style={{background:C.surface,border:`1px solid ${open?C.accent+"55":C.border}`,borderRadius:12,marginBottom:12,overflow:"hidden",transition:"border-color 0.2s"}}>
+                    <button onClick={()=>toggleSection(id)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 18px",background:"transparent",border:"none",cursor:"pointer",textAlign:"left",gap:10}}>
+                      <span style={{fontSize:11,color:open?C.accent:C.text,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700}}>{title}</span>
+                      <span style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+                        {!open&&summary&&<span style={{fontSize:11,color:C.textDim,fontFamily:"monospace"}}>{summary}</span>}
+                        <span style={{color:open?C.accent:C.textDim,fontSize:18,fontFamily:"monospace",transition:"transform 0.2s",display:"inline-block",transform:open?"rotate(0deg)":"rotate(-90deg)"}}>▾</span>
+                      </span>
+                    </button>
+                    {open&&<div style={{padding:"4px 18px 18px",borderTop:`1px solid ${C.border}`}}>{children}</div>}
+                  </div>
+                );
+              };
+              const TI=({label,mode,setMode,monthly,setMonthly,annual,setAnnual,tip})=>(
+                <div style={{marginBottom:14}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:7}}>
+                    <span style={{fontSize:12,color:C.textMid,display:"flex",alignItems:"center",gap:4}}>{label}<InfoTip text={tip}/></span>
+                    <div style={{display:"flex",background:C.bg,border:`1px solid ${C.border}`,borderRadius:5,overflow:"hidden"}}>
+                      {[["monthly","Monthly"],["annual","Annual"],["escrow","In escrow"]].map(([v,l])=>(
+                        <button key={v} onClick={()=>setMode(v)} style={{padding:"3px 9px",background:mode===v?C.accent:"transparent",color:mode===v?C.bg:C.textDim,border:"none",cursor:"pointer",fontFamily:"monospace",fontSize:10,fontWeight:mode===v?700:400}}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  {mode!=="escrow"&&(
+                    <div>
+                        <DollarInput value={mode==="annual"?annual:monthly} onChange={n=>{mode==="annual"?setAnnual(n):setMonthly(n);}} suffix={mode==="annual"?"/yr":"/mo"}/>
+                      {mode==="annual"&&<div style={{fontSize:10,color:C.textDim,marginTop:4}}>= {fmt(annual/12)}/mo</div>}
+                    </div>
+                  )}
+                  {mode==="escrow"&&<div style={{fontSize:11,color:C.textDim,lineHeight:1.5}}>Already included in your total mortgage payment above — no separate entry needed.</div>}
+                </div>
+              );
 
-            <Section title="HELOC Fees" tip="Real costs that affect your total. Many lenders waive some or all of these — always ask.">
-              <NumInput label="Origination / Closing Cost" value={helocOrigination} onChange={setHelocOrigination} tip="One-time fee to open the HELOC. Ranges from $0 (many credit unions waive) to $500+. Always negotiate."/>
-              <NumInput label="Annual Fee (per year)" value={helocAnnual} onChange={setHelocAnnual} tip="Charged yearly to keep the line open. $0–$100 typically. Some lenders waive if you maintain a minimum balance or draw."/>
-              <div style={{background:C.bg,borderRadius:8,border:`1px solid ${C.border}`,padding:12}}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:11,color:C.textMid,fontFamily:"monospace"}}>Total fee cost over strategy</span><span style={{fontSize:13,fontFamily:"monospace",color:C.amber,fontWeight:700}}>{result?fmt(result.totalFeesPaid):"—"}</span></div>
-                <div style={{fontSize:10,color:C.textDim}}>Origination + ({remainingYears} yrs × annual fee). Included in total interest calculations.</div>
+              const mortgageSummary=mortgageBal>0?`${fmt(mortgageBal)} @ ${mortgageRate}%`:null;
+              const helocSummary=`${helocRate}% · ${ltvLimit}% LTV`;
+              const incomeSummary=monthlyIncome>0?fmt(monthlyIncome):null;
+              const expenseSummary=livingExpenses>0?fmt(livingExpenses):null;
+
+              return(<>
+
+              {/* ── MORTGAGE ── */}
+              <Accordion id="mortgage" title="🏠 Mortgage Details" summary={mortgageSummary}>
+                <NumInput label="Current Mortgage Balance" value={mortgageBal} onChange={setMortgageBal} tip="The remaining principal you owe — find it on your monthly statement."/>
+                <SliderInput label="Interest Rate" value={mortgageRate} min={2} max={9} step={0.05} onChange={setMortgageRate} format={v=>v.toFixed(2)+"%"} hint="US 30yr fixed avg ~6.8% as of 2025" tip="Your annual mortgage rate. Check your loan documents."/>
+
+                {/* Payment mode */}
+                <div style={{marginBottom:14}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:7}}>
+                    <span style={{fontSize:12,color:C.textMid}}>Monthly Payment</span>
+                    <div style={{display:"flex",background:C.bg,border:`1px solid ${C.border}`,borderRadius:5,overflow:"hidden"}}>
+                      {[["pi","P+I only"],["total","Total w/ escrow"]].map(([v,l])=>(
+                        <button key={v} onClick={()=>setPmtMode(v)} style={{padding:"3px 9px",background:pmtMode===v?C.accent:"transparent",color:pmtMode===v?C.bg:C.textDim,border:"none",cursor:"pointer",fontFamily:"monospace",fontSize:10,fontWeight:pmtMode===v?700:400}}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <DollarInput value={pmtMode==="total"?totalPmt:mortgagePmt} onChange={n=>{pmtMode==="total"?setTotalPmt(n):setMortgagePmt(n);}} suffix="/mo"/>
+                  {pmtMode==="pi"&&<div style={{fontSize:10,color:C.textDim,marginTop:4}}>Principal + interest only. Find the P+I line on your statement — not the total if tax/insurance are escrowed.</div>}
+                  {pmtMode==="total"&&<div style={{fontSize:10,color:C.textDim,marginTop:4}}>Full payment including escrow. P+I calculated: <span style={{color:C.accent,fontWeight:700}}>{fmt(piOnly)}</span> (after subtracting T&I below)</div>}
+                </div>
+
+                {/* Property Tax */}
+                <TI
+                  label="Property Tax"
+                  mode={propTaxMode} setMode={setPropTaxMode}
+                  monthly={propTaxMonthly} setMonthly={setPropTaxMonthly}
+                  annual={propTaxAnnual} setAnnual={setPropTaxAnnual}
+                  tip="Your annual property tax divided by 12 if paying monthly, or your annual bill. Select 'In escrow' if it's already bundled into your mortgage payment above."
+                />
+
+                {/* Home Insurance */}
+                <TI
+                  label="Home Insurance"
+                  mode={insurMode} setMode={setInsurMode}
+                  monthly={insurMonthly} setMonthly={setInsurMonthly}
+                  annual={insurAnnual} setAnnual={setInsurAnnual}
+                  tip="Homeowner's insurance premium. Select 'In escrow' if already bundled into your mortgage payment."
+                />
+
+                <SliderInput label="Years Remaining" value={remainingYears} min={1} max={30} step={1} onChange={setRemainingYears} format={v=>v+"y"} hint="How many years left on the loan" tip="More years remaining = more front-loaded interest still ahead = more to save."/>
+                <NumInput label="Current Home Value" value={homeValue} onChange={setHomeValue} tip="Use Zillow, Redfin, or a recent appraisal. Lenders will appraise independently before issuing a HELOC."/>
+
+                <div style={{background:C.bg,borderRadius:8,border:`1px solid ${C.border}`,padding:"10px 12px",marginTop:4}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                    <span style={{fontSize:11,color:C.textMid,fontFamily:"monospace"}}>Total monthly housing cost</span>
+                    <span style={{fontSize:14,fontFamily:"monospace",color:C.amber,fontWeight:700}}>{fmt(piOnly+taxInsurance)}</span>
+                  </div>
+                  <div style={{fontSize:10,color:C.textDim}}>P+I {fmt(piOnly)}{propTax>0?` + Tax ${fmt(propTax)}`:""}{homeInsur>0?` + Insurance ${fmt(homeInsur)}`:""}{(propTaxMode==="escrow"||insurMode==="escrow")?" (some in escrow)":""}</div>
+                </div>
+              </Accordion>
+
+              {/* ── HELOC ── */}
+              <Accordion id="heloc" title="🏦 HELOC Settings" summary={helocSummary}>
+                <SliderInput label="HELOC Interest Rate" value={helocRate} min={4} max={13} step={0.25} onChange={setHelocRate} format={v=>v.toFixed(2)+"%"} hint="Usually Prime + 0–2%. Credit unions often lower." tip="The single most important input. A lower HELOC rate dramatically improves the strategy. Shop at least 3 lenders — especially local credit unions — before accepting any offer."/>
+                <SliderInput label="LTV Limit" value={ltvLimit} min={60} max={90} step={5} onChange={setLtvLimit} format={v=>v+"%"} hint="80% is standard. Some credit unions offer 85–90%." tip="Your mortgage + HELOC combined can't exceed this % of home value. Ask each lender — it varies."/>
+                <SliderInput label="Home Appreciation Rate" value={appreciationRate} min={0} max={8} step={0.5} onChange={setAppreciationRate} format={v=>v.toFixed(1)+"%/yr"} hint="US avg ~3–4%/yr. High-growth markets 5–7%." tip="As your home appreciates, your HELOC ceiling grows each cycle. Set to 0% for a conservative scenario."/>
+                <LTVVisual homeValue={homeValue} mortgageBal={mortgageBal} ltvLimit={ltvLimit}/>
+                <div style={{marginTop:14,borderTop:`1px solid ${C.border}`,paddingTop:12}}>
+                  <button onClick={()=>setShowHelocFees(f=>!f)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"transparent",border:"none",cursor:"pointer",padding:0,marginBottom:showHelocFees?10:0}}>
+                    <span style={{fontSize:11,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em"}}>HELOC Fees <InfoTip text="Most lenders charge $0–$500 to open and $0–$100/yr annually. Many credit unions waive entirely — always ask."/></span>
+                    <span style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{fontSize:11,fontFamily:"monospace",color:helocOrigination+helocAnnual>0?C.amber:C.textDim}}>{helocOrigination+helocAnnual===0?"$0 — tap to edit":`${fmt(helocOrigination)} + ${fmt(helocAnnual)}/yr`}</span>
+                      <span style={{color:C.textDim,fontSize:14,fontFamily:"monospace",transform:showHelocFees?"rotate(0)":"rotate(-90deg)",transition:"transform 0.2s",display:"inline-block"}}>▾</span>
+                    </span>
+                  </button>
+                  {showHelocFees&&(
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                      <NumInput label="Origination / Closing" value={helocOrigination} onChange={setHelocOrigination} tip="One-time fee. $0–$500+ typically. Many credit unions waive entirely."/>
+                      <NumInput label="Annual Fee" value={helocAnnual} onChange={setHelocAnnual} tip="Yearly fee to keep the line open. $0–$100 typically."/>
+                    </div>
+                  )}
+                </div>
+              </Accordion>
+
+              {/* ── INCOME ── */}
+              <Accordion id="income" title="💰 Monthly Income" summary={incomeSummary}>
+                <div style={{fontSize:11,color:C.textDim,marginBottom:14,lineHeight:1.5}}>After-tax take-home only. This is what flows into the HELOC on paydays — being accurate here is critical.</div>
+                <ExpenseRow label="Primary income (salary / wages)" value={primaryIncome} onChange={setPrimaryIncome} tip="Your main job's monthly take-home after all taxes and deductions."/>
+                <ExpenseRow label="Secondary income (spouse / partner)" value={secondaryIncome} onChange={setSecondaryIncome} tip="Second earner's take-home. Zero if single income."/>
+                <ExpenseRow label="Other (rental, side, etc.)" value={otherIncome} onChange={setOtherIncome} tip="Rental income, freelance, business distributions. Only reliably recurring amounts."/>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10,padding:"10px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.border}`}}>
+                  <span style={{fontSize:11,color:C.textMid,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.06em"}}>Total Monthly Income</span>
+                  <span style={{fontSize:17,fontFamily:"monospace",fontWeight:700,color:C.green}}>{fmt(monthlyIncome)}</span>
+                </div>
+              </Accordion>
+
+              {/* ── EXPENSES ── */}
+              <Accordion id="expenses" title="📋 Monthly Expenses" summary={expenseSummary}>
+                <div style={{fontSize:11,color:C.textDim,marginBottom:14,lineHeight:1.5}}>Exclude your mortgage. The #1 reason velocity banking fails is an overestimated surplus — use your last 3 months of statements.</div>
+                <div style={{display:"flex",background:C.bg,border:`1px solid ${C.border}`,borderRadius:7,overflow:"hidden",marginBottom:14}}>
+                  {[["simple","One total"],["detailed","By category"]].map(([v,lbl])=>(
+                    <button key={v} onClick={()=>setExpenseMode(v)} style={{flex:1,padding:"8px 0",background:expenseMode===v?C.accent:"transparent",color:expenseMode===v?C.bg:C.textMid,border:"none",cursor:"pointer",fontFamily:"monospace",fontSize:11,fontWeight:expenseMode===v?700:400,transition:"all 0.15s"}}>{lbl}</button>
+                  ))}
+                </div>
+                {expenseMode==="simple"?(
+                  <div>
+                    <ExpenseRow label="Total monthly expenses (excl. mortgage)" value={totalExpensesSimple} onChange={setTotalExpensesSimple} tip="Everything except your mortgage — debt payments, food, utilities, transport, subscriptions, etc."/>
+                    <div style={{fontSize:10,color:C.textDim,marginTop:4,lineHeight:1.6}}>Switch to "By category" to make sure nothing is forgotten.</div>
+                  </div>
+                ):(
+                  <div>
+                    {expenseGroups.map((group,gi)=>{
+                      const groupTotal=group.rows.reduce((s,r)=>s+r.value,0);
+                      const isOpen=!!openGroups[group.label];
+                      return(
+                        <div key={gi} style={{marginBottom:8,background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,overflow:"hidden"}}>
+                          <button onClick={()=>toggleGroup(group.label)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"transparent",border:"none",cursor:"pointer",textAlign:"left"}}>
+                            <div style={{width:3,height:14,background:group.color,borderRadius:2,flexShrink:0}}/>
+                            <span style={{fontSize:11,color:group.color,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700,flex:1}}>{group.label}</span>
+                            {group.tip&&<InfoTip text={group.tip}/>}
+                            <span style={{fontSize:12,fontFamily:"monospace",color:groupTotal>0?C.textMid:C.textDim,marginRight:8}}>{fmt(groupTotal)}</span>
+                            <span style={{fontSize:14,color:C.textDim,fontFamily:"monospace",transform:isOpen?"rotate(0)":"rotate(-90deg)",transition:"transform 0.2s",display:"inline-block"}}>▾</span>
+                          </button>
+                          {isOpen&&(
+                            <div style={{padding:"4px 12px 12px",borderTop:`1px solid ${C.border}`}}>
+                              {group.rows.map((row,ri)=>(
+                                <ExpenseRow key={ri} label={row.label} value={row.value} onChange={row.set} tip={row.tip}/>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <div style={{borderTop:`1px solid ${C.border}`,paddingTop:12,marginTop:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{fontSize:11,color:C.textMid,fontFamily:"monospace"}}>Total non-mortgage expenses</span>
+                  <span style={{fontSize:14,fontFamily:"monospace",fontWeight:700,color:C.amber}}>{fmt(livingExpenses)}</span>
+                </div>
+              </Accordion>
+
+              {/* ── STARTING CAPITAL ── */}
+              <Accordion id="savings" title="🏦 Starting Capital" summary={savings>0?fmt(savings):null}>
+                <NumInput label="Savings to Deploy Day 1" value={savings} onChange={setSavings} tip="Cash you'll deposit into the HELOC when you open it. Every dollar reduces your starting balance and early interest. It stays accessible — you're not spending it."/>
+              </Accordion>
+
+              </>);
+            })()}
+
+            {/* SURPLUS SUMMARY */}
+            <div style={{background:surplus>0?C.greenDim:C.redDim,border:`1px solid ${surplus>0?C.green+"44":C.red+"44"}`,borderRadius:12,padding:18}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                <div>
+                  <div style={{fontSize:10,color:surplus>0?C.green:C.red,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Monthly Surplus</div>
+                  <div style={{fontSize:11,color:C.textDim,lineHeight:1.5}}>This is how fast your HELOC balance drops each month. Higher = faster payoff.</div>
+                </div>
+                <div style={{fontSize:32,fontFamily:"monospace",fontWeight:800,color:surplus>0?C.green:C.red}}>{fmt(surplus)}</div>
               </div>
-            </Section>
-
-            <Section title="Monthly Cash Flow" tip="Be honest here — the calculator's accuracy depends on realistic numbers.">
-              <NumInput label="Monthly Take-Home Income" value={monthlyIncome} onChange={setMonthlyIncome} tip="All household after-tax income — salary, side income, rentals. This is what flows into the HELOC on paydays."/>
-              <NumInput label="Monthly Living Expenses" value={livingExpenses} onChange={setLivingExpenses} tip="Food, gas, utilities, subscriptions, entertainment. Everything except mortgage and debt payments. Check your last 3 months of statements."/>
-              <NumInput label="Other Monthly Debt Payments" value={monthlyDebts} onChange={setMonthlyDebts} tip="Car loans, student loans, personal loans. Do NOT include your mortgage here."/>
-              <NumInput label="Savings to Deploy Day 1" value={savings} onChange={setSavings} tip="Cash you'll immediately deposit into the HELOC on day one. Every dollar cuts early interest charges."/>
-              <div style={{background:C.bg,borderRadius:8,border:`1px solid ${surplus>0?C.border:C.red+"44"}`,padding:12}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontSize:11,color:C.textMid,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.06em"}}>Monthly Surplus</span><span style={{fontSize:17,fontFamily:"monospace",fontWeight:700,color:surplus>0?C.green:C.red}}>{fmt(surplus)}</span></div>
-                <div style={{fontSize:10,color:C.textDim,lineHeight:1.5}}>Income minus all outflows. This is the rate your HELOC balance drops each month.</div>
-                {surplus<=0&&<div style={{fontSize:10,color:C.red,marginTop:6,fontFamily:"monospace",lineHeight:1.5}}>⚠ Negative surplus — velocity banking requires positive monthly cash flow to work.</div>}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:11,fontFamily:"monospace"}}>
+                <div style={{background:"rgba(0,0,0,0.2)",borderRadius:6,padding:"8px 10px"}}>
+                  <div style={{color:C.textDim,marginBottom:2}}>Total income</div>
+                  <div style={{color:C.green,fontWeight:700}}>{fmt(monthlyIncome)}</div>
+                </div>
+                <div style={{background:"rgba(0,0,0,0.2)",borderRadius:6,padding:"8px 10px"}}>
+                  <div style={{color:C.textDim,marginBottom:2}}>Total outflow</div>
+                  <div style={{color:C.amber,fontWeight:700}}>{fmt(totalMonthlyOut)}</div>
+                </div>
               </div>
-            </Section>
+              {surplus<=500&&surplus>0&&<div style={{marginTop:10,fontSize:11,color:C.amber,lineHeight:1.5}}>⚠ Surplus under $500/month. The strategy works but payoff cycles will be long. Consider reducing discretionary expenses first.</div>}
+              {surplus<=0&&<div style={{marginTop:10,fontSize:11,color:C.red,lineHeight:1.5}}>⚠ Negative surplus. Velocity banking requires positive monthly cash flow. Adjust income or expenses above until this number is positive.</div>}
+            </div>
 
-            <Section title="Strategy Settings" tip="Controls how aggressively you draw equity each cycle. 25% is the proven sweet spot for most scenarios.">
-              <SliderInput label="Equity Drawn Per Cycle" value={redrawPct} min={0.10} max={1.0} step={0.05} onChange={setRedrawPct} format={v=>Math.round(v*100)+"%"} tip="When HELOC hits $0, this % of available equity gets drawn onto the mortgage. 25% is optimal for most people. Higher rates (5%+ mortgage) support higher draw percentages."/>
-              <StrategyExplainer redrawPct={redrawPct} surplus={surplus} result={result}/>
-            </Section>
           </div>
 
-          {/* RIGHT RESULTS */}
+          {/* ── RIGHT COLUMN ── */}
           <div>
             {/* Verdict */}
-            <div style={{background:vc.bg,border:`1px solid ${vc.color}44`,borderLeft:`4px solid ${vc.color}`,borderRadius:10,padding:"16px 20px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:14}}>
+            <div style={{background:vc.bg,border:`1px solid ${vc.color}44`,borderLeft:`4px solid ${vc.color}`,borderRadius:10,padding:"16px 20px",marginBottom:16,display:"flex",alignItems:"flex-start",gap:14}}>
               <span style={{fontSize:30,lineHeight:1,flexShrink:0}}>{vc.icon}</span>
-              <div>
+              <div style={{flex:1}}>
                 <div style={{fontSize:12,fontFamily:"monospace",fontWeight:700,color:vc.color,letterSpacing:"0.1em",marginBottom:4}}>VELOCITY BANKING: {vc.label}</div>
                 <div style={{fontSize:12,color:C.textMid,lineHeight:1.6,marginBottom:result?6:0}}>{vc.sub}</div>
                 {result&&<div style={{fontSize:11,color:C.textDim,lineHeight:1.5}}>Saves <span style={{color:C.green,fontWeight:700}}>{fmt(result.interestSavedVsBaseline)}</span> vs doing nothing · {result.extraCostVsDirect>0?<span>Costs <span style={{color:C.amber}}>{fmt(result.extraCostVsDirect)}</span> more than locking cash away — but money stays liquid</span>:<span><span style={{color:C.green}}>{fmt(Math.abs(result.extraCostVsDirect))} cheaper</span> than locking cash away AND keeps liquidity</span>}</div>}
@@ -422,42 +718,161 @@ function App(){
             </div>
 
             {result&&<>
+              {/* Strategy Settings — under verdict */}
+              <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px 18px",marginBottom:16}}>
+                <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:14,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>// Strategy Settings <InfoTip text="Controls how aggressively you draw equity each cycle. Adjust this after seeing your results — the sweet spot depends on your specific rate spread."/></div>
+                <SliderInput label="Equity Drawn Per Cycle" value={redrawPct} min={0.10} max={1.0} step={0.05} onChange={setRedrawPct} format={v=>Math.round(v*100)+"%"} tip="When HELOC hits $0, this % of available equity gets drawn onto the mortgage. 25% is the sweet spot for most people — keeps HELOC balances small so interest stays low. At lower mortgage rates, go lower (10–15%). At 6%+ mortgage rates, you can go higher."/>
+                <StrategyExplainer redrawPct={redrawPct} surplus={surplus} result={result}/>
+              </div>
+
+              {/* Key stat cards */}
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:10}}>
                 <Card label="Payoff Timeline" value={mo(result.months)} sub={`vs ${mo(result.baseline.months)} doing nothing`} color={C.green}/>
-                <Card label="Total Interest + Fees" value={fmt(result.total)} sub={`Mtg: ${fmt(result.totalMInt)} · HELOC: ${fmt(result.totalHInt)} · Fees: ${fmt(result.totalFeesPaid)}`} color={C.amber}/>
+                <Card label="Total Interest + Fees" value={fmt(result.total)} sub={`Mtg: ${fmt(result.totalMInt)} · HELOC: ${fmt(result.totalHInt)}`} color={C.amber}/>
                 <Card label="Interest Saved" value={fmt(result.interestSavedVsBaseline)} sub="vs 30yr schedule, no extra payments" color={C.accent}/>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:22}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
                 <Card label="HELOC Cycles" value={result.cycleCount} sub={`~${Math.round(result.months/result.cycleCount)} months per cycle`} color={C.textMid}/>
                 <Card label="HELOC Ceiling" value={fmt(result.ltvCeiling)} sub={`First draw: ${fmt(result.initialDraw)} onto mortgage`} color={C.textMid}/>
                 <Card label="vs Locking Cash Away" value={(result.extraCostVsDirect>0?"+":"")+fmt(result.extraCostVsDirect)} sub={result.extraCostVsDirect>0?"premium for full liquidity":"cheaper + liquidity"} color={result.extraCostVsDirect>0?C.amber:C.green}/>
               </div>
 
-              {/* Tabs */}
-              <div style={{display:"flex",gap:2,marginBottom:14,background:C.surface,padding:4,borderRadius:8,border:`1px solid ${C.border}`}}>
-                {["overview","year-by-year","cycles","comparison"].map(t=><Tab key={t} label={t.replace("-"," ")} active={tab===t} onClick={()=>setTab(t)}/>)}
+              {/* Payoff Story strip */}
+              <div style={{background:C.surfaceAlt,border:`1px solid ${C.border}`,borderRadius:10,padding:"14px 18px",marginBottom:16}}>
+                <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:12}}>// Your Payoff Story</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:0}}>
+                  {[
+                    {step:"Day 0",color:C.accent,text:`Draw ${fmt(result.initialDraw)} → mortgage drops to ${fmt(mortgageBal-result.initialDraw)}. Deposit ${fmt(result.savingsApplied)} savings → HELOC starts at ${fmt(result.initialDraw-result.savingsApplied)}.`},
+                    {step:"Monthly",color:C.green,text:`All income (${fmt(monthlyIncome)}) deposits into HELOC. Bills drawn out. Net paydown: ~${fmt(surplus)}/mo.`},
+                    {step:"Interest",color:C.amber,text:`Month 1 HELOC interest: ~${fmt((result.initialDraw-result.savingsApplied)*(helocRate/100/12))}. Drops every month as balance falls.`},
+                    {step:"Redraw",color:C.accent,text:`Every ~${Math.round(result.months/result.cycleCount)} months HELOC hits $0. Draw ${Math.round(redrawPct*100)}% of equity onto mortgage. Repeat ${result.cycleCount}×.`},
+                    {step:"Payoff",color:C.green,text:`Done in ${mo(result.months)} vs ${mo(result.baseline.months)}. Saved ${fmt(result.interestSavedVsBaseline)}. HELOC open throughout.`},
+                  ].map(({step,color,text},i,arr)=>(
+                    <div key={step} style={{padding:"0 14px",borderRight:i<arr.length-1?`1px solid ${C.border}`:"none"}}>
+                      <div style={{fontSize:9,color,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700,marginBottom:5}}>{step}</div>
+                      <div style={{fontSize:11,color:C.textMid,lineHeight:1.6}}>{text}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Overview */}
-              {tab==="overview"&&<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden"}}><div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,fontSize:11,color:C.textMid,fontFamily:"monospace"}}>How this plays out with your exact numbers</div><div style={{padding:18}}>{[{step:"Day 0",color:C.accent,text:`Draw ${fmt(result.initialDraw)} from HELOC → mortgage drops from ${fmt(mortgageBal)} to ${fmt(mortgageBal-result.initialDraw)} instantly. Deposit ${fmt(result.savingsApplied)} savings → HELOC starts at ${fmt(result.initialDraw-result.savingsApplied)}.`},{step:"Ongoing",color:C.green,text:`All income (${fmt(monthlyIncome)}/mo) direct deposits into HELOC. Mortgage payment (${fmt(mortgagePmt)}) + debts (${fmt(monthlyDebts)}) drawn on the 1st. CC expenses paid monthly. Net HELOC paydown: ~${fmt(surplus)}/month.`},{step:"Interest",color:C.amber,text:`HELOC interest month 1: ~${fmt((result.initialDraw-result.savingsApplied)*(helocRate/100/12))}. Drops every month as balance falls. Home appreciating at ${appreciationRate}%/yr grows your ceiling by ~${fmt(homeValue*appreciationRate/100/12)}/mo independently.`},{step:"Redraw",color:C.accent,text:`~Every ${Math.round(result.months/result.cycleCount)} months HELOC hits $0. Draw ${Math.round(redrawPct*100)}% of available equity (growing each cycle from both paydown AND appreciation) onto mortgage. Repeat ${result.cycleCount} total times.`},{step:"Payoff",color:C.green,text:`Mortgage gone in ${mo(result.months)} vs ${mo(result.baseline.months)} doing nothing. Saved ${fmt(result.interestSavedVsBaseline)} in interest. HELOC ceiling grew to ${fmt(result.ltvCeiling)} — fully accessible throughout.`}].map(({step,color,text})=>(<div key={step} style={{display:"flex",gap:12,marginBottom:14}}><div style={{minWidth:56,height:22,background:color+"22",border:`1px solid ${color}44`,borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"monospace",fontSize:9,color,letterSpacing:"0.05em",textTransform:"uppercase",flexShrink:0}}>{step}</div><div style={{fontSize:12,color:C.textMid,lineHeight:1.7,paddingTop:2}}>{text}</div></div>))}</div><div style={{padding:"10px 16px",background:C.bg,borderTop:`1px solid ${C.border}`,fontSize:10,color:C.textDim,fontFamily:"monospace"}}>Model: income 1st & 15th · CC paid day 25 · {ltvLimit}% LTV · {appreciationRate}%/yr appreciation · exact daily interest accrual</div></div>}
+              {/* Tabs — fixed-height wrapper prevents layout jolt */}
+              <div style={{display:"flex",gap:2,marginBottom:14,background:C.surface,padding:4,borderRadius:8,border:`1px solid ${C.border}`}}>
+                {[["year-by-year","Year-by-Year"],["cycles-comparison","Cycles & Comparison"]].map(([t,l])=><Tab key={t} label={l} active={tab===t} onClick={()=>setTab(t)}/>)}
+              </div>
 
-              {/* Year by Year */}
-              {tab==="year-by-year"&&<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,overflow:"auto"}}><table><thead><tr style={{background:C.bg}}>{["Year","Mortgage","HELOC","Yr Mtg Int","Yr HELOC Int","Blended Rate","Saved vs Nothing","Liquidity","Notes"].map(h=>(<th key={h} style={{padding:"10px 12px",textAlign:"left",fontSize:9,color:C.textDim,fontFamily:"monospace",letterSpacing:"0.04em",textTransform:"uppercase",fontWeight:400,whiteSpace:"nowrap"}}>{h}</th>))}</tr></thead><tbody>{result.yearData.map((y,i)=>{const prevY=i>0?result.yearData[i-1]:null;const note=plainEnglishRow(y,prevY,result.cycleLog);const isBreakeven=y.savedVsNothing>0&&(!prevY||prevY.savedVsNothing<=0);return(<React.Fragment key={i}><tr style={{borderBottom:note?`1px solid ${C.border}`:undefined,background:i%2===0?"transparent":C.surfaceAlt+"22"}}><td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:C.textMid}}>{y.partial?`Yr ${y.year}*`:`Year ${y.year}`}</td><td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:C.text}}>{y.mBal>0?fmt(y.mBal):<span style={{color:C.green,fontWeight:700}}>✓ PAID</span>}</td><td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:C.text}}>{fmt(y.hBal)}</td><td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:C.amber}}>{fmt(y.yrMInt)}</td><td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:y.yrHInt>y.yrMInt?C.red:C.accent}}>{fmt(y.yrHInt)}</td><td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:C.textMid}}>{y.blendedRate>0?y.blendedRate.toFixed(2)+"%":"—"}</td><td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:y.savedVsNothing>0?C.green:C.red,fontWeight:isBreakeven?700:400}}>{y.savedVsNothing>0?"+":""}{fmt(y.savedVsNothing)}{isBreakeven?" ✓":""}</td><td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:C.green}}>{fmt(y.liquidity)}</td><td style={{padding:"9px 12px",fontSize:11,color:C.textDim,fontStyle:"italic",minWidth:180}}>{note}</td></tr></React.Fragment>);})}</tbody></table><div style={{padding:"8px 14px",borderTop:`1px solid ${C.border}`,fontSize:10,color:C.textDim,fontFamily:"monospace",display:"flex",gap:16,flexWrap:"wrap"}}><span>* Partial year</span><span style={{color:C.red}}>■ HELOC Int red = exceeds mortgage int that year</span><span style={{color:C.green}}>■ Saved vs Nothing turns green at break-even</span></div></div>}
+              {/* Tab panels — minWidth locks the container to year-by-year table width */}
+              <div style={{minWidth:800}}>
 
-              {/* Cycles */}
-              {tab==="cycles"&&<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden"}}><div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,fontSize:11,color:C.textMid,fontFamily:"monospace"}}>{result.cycleCount} total cycles — each one applies a lump sum of equity directly to mortgage principal</div>{result.cycleLog.map((c,i)=>(<div key={i} style={{padding:"16px 18px",borderBottom:i<result.cycleLog.length-1?`1px solid ${C.border}`:"none",display:"flex",gap:14,alignItems:"flex-start"}}><div style={{width:34,height:34,borderRadius:"50%",flexShrink:0,background:i===0?C.accentGlow:C.surfaceAlt,border:`2px solid ${i===0?C.accent:C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"monospace",fontSize:12,fontWeight:700,color:i===0?C.accent:C.textMid}}>{c.cycle}</div><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontFamily:"monospace",fontSize:13,color:C.text}}>{c.month===0?"Day 0 — Initial Draw":`Month ${c.month} — Cycle ${c.cycle} Redraw`}</span><span style={{fontFamily:"monospace",fontSize:14,color:C.accent,fontWeight:700}}>{fmt(c.draw)}</span></div><div style={{fontSize:11,color:C.textMid,lineHeight:1.7}}>{c.month===0?`Drew ${fmt(c.draw)} from HELOC → mortgage drops to ${fmt(c.mortgageAfter)}. Applied ${fmt(result.savingsApplied)} savings → HELOC starts at ${fmt(c.draw-result.savingsApplied)}. Income now pays it down ~${fmt(surplus)}/month.`:`HELOC reached $0. Home now worth ~${fmt(c.homeValue)} — ceiling: ${fmt(c.ceiling||0)}. Drew ${Math.round(redrawPct*100)}% (${fmt(c.draw)}) → mortgage now ${fmt(c.mortgageAfter)}. Cycle restarts.`}</div></div></div>))}<div style={{padding:"12px 18px",background:C.bg,borderTop:`1px solid ${C.border}`,fontSize:11,color:C.textMid,lineHeight:1.5}}>Each redraw skips months or years of scheduled amortization instantly. That eliminated principal never accrues interest again — and as your home appreciates, each cycle's ceiling is larger than the last.</div></div>}
+                {/* Year-by-Year */}
+              <div style={{display:tab==="year-by-year"?"block":"none",background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden"}}>
+                <div style={{overflowX:"auto"}}>
+                  <table style={{minWidth:780}}>
+                    <thead>
+                      <tr style={{background:C.bg}}>
+                        {["Year","Mortgage Bal","HELOC Bal","Yr Mtg Int","Yr HELOC Int","Blended Rate","Saved vs Nothing","Liquidity","Notes"].map(h=>(
+                          <th key={h} style={{padding:"10px 12px",textAlign:"left",fontSize:9,color:C.textDim,fontFamily:"monospace",letterSpacing:"0.04em",textTransform:"uppercase",fontWeight:400,whiteSpace:"nowrap"}}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.yearData.map((y,i)=>{
+                        const prevY=i>0?result.yearData[i-1]:null;
+                        const note=plainEnglishRow(y,prevY,result.cycleLog);
+                        const isBreakeven=y.savedVsNothing>0&&(!prevY||prevY.savedVsNothing<=0);
+                        return(
+                          <tr key={i} style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?"transparent":C.surfaceAlt+"22"}}>
+                            <td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:C.textMid,whiteSpace:"nowrap"}}>{y.partial?`Yr ${y.year}*`:`Year ${y.year}`}</td>
+                            <td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:C.text,whiteSpace:"nowrap"}}>{y.mBal>0?fmt(y.mBal):<span style={{color:C.green,fontWeight:700}}>✓ PAID</span>}</td>
+                            <td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:C.text,whiteSpace:"nowrap"}}>{fmt(y.hBal)}</td>
+                            <td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:C.amber,whiteSpace:"nowrap"}}>{fmt(y.yrMInt)}</td>
+                            <td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:y.yrHInt>y.yrMInt?C.red:C.accent,whiteSpace:"nowrap"}}>{fmt(y.yrHInt)}</td>
+                            <td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:C.textMid,whiteSpace:"nowrap"}}>{y.blendedRate>0?y.blendedRate.toFixed(2)+"%":"—"}</td>
+                            <td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:y.savedVsNothing>0?C.green:C.red,fontWeight:isBreakeven?700:400,whiteSpace:"nowrap"}}>{y.savedVsNothing>0?"+":""}{fmt(y.savedVsNothing)}{isBreakeven?" ✓":""}</td>
+                            <td style={{padding:"9px 12px",fontFamily:"monospace",fontSize:12,color:C.green,whiteSpace:"nowrap"}}>{fmt(y.liquidity)}</td>
+                            <td style={{padding:"9px 12px",fontSize:11,color:C.textDim,fontStyle:"italic",minWidth:160}}>{note}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div style={{padding:"8px 14px",borderTop:`1px solid ${C.border}`,fontSize:10,color:C.textDim,fontFamily:"monospace",display:"flex",gap:16,flexWrap:"wrap"}}>
+                  <span>* Partial year</span>
+                  <span style={{color:C.red}}>■ HELOC Int red = exceeds mortgage int that year</span>
+                  <span style={{color:C.green}}>■ Saved vs Nothing turns green at break-even</span>
+                </div>
+              </div>
 
-              {/* Comparison */}
-              {tab==="comparison"&&<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden"}}><div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,fontSize:11,color:C.textMid,fontFamily:"monospace"}}>Three strategies with the same income — side by side</div>{[{label:"30yr Schedule — No Extra Payments",payoff:mo(result.baseline.months),mInt:result.baseline.totalInt,hInt:0,total:result.baseline.totalInt,liquidity:"Full — all surplus stays liquid but earns nothing",color:C.textMid,note:"The default path. Maximum interest, full term, no payoff acceleration.",highlight:false},{label:`Velocity Banking (${Math.round(redrawPct*100)}% redraw)`,payoff:mo(result.months),mInt:result.totalMInt,hInt:result.totalHInt,total:result.total,liquidity:`${fmt(result.ltvCeiling)} accessible line throughout`,color:C.accent,note:"Pays off early, saves significant interest, AND keeps money liquid. Appreciation grows the ceiling each cycle.",highlight:true},{label:"Direct Extra Principal Payments",payoff:mo(result.direct.months),mInt:result.direct.totalInt,hInt:0,total:result.direct.totalInt,liquidity:"$0 accessible — all surplus locked in equity",color:C.amber,note:"Cheapest total interest but requires perfect discipline and sacrifices all liquidity. Emergency = refinance.",highlight:false}].map((s,i)=>(<div key={i} style={{padding:"18px 20px",borderBottom:i<2?`1px solid ${C.border}`:"none",background:s.highlight?C.accentGlow:"transparent",borderLeft:`4px solid ${s.highlight?C.accent:"transparent"}`}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}><span style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:s.color,maxWidth:"65%",lineHeight:1.4}}>{s.label}</span><div style={{textAlign:"right"}}><div style={{fontSize:9,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",marginBottom:1}}>Payoff</div><div style={{fontSize:16,fontFamily:"monospace",fontWeight:700,color:C.text}}>{s.payoff}</div></div></div><div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:10}}>{[["Mortgage Int",fmt(s.mInt),C.amber],["HELOC Int",fmt(s.hInt),s.hInt>0?C.accent:C.textDim],["Total Interest",fmt(s.total),s.color]].map(([lbl,val,col])=>(<div key={lbl} style={{background:C.surfaceAlt,borderRadius:6,padding:"10px 12px"}}><div style={{fontSize:9,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",marginBottom:3}}>{lbl}</div><div style={{fontSize:15,fontFamily:"monospace",color:col,fontWeight:700}}>{val}</div></div>))}</div><div style={{fontSize:11,color:C.textDim,marginBottom:4}}><span style={{color:C.textMid}}>Liquidity: </span>{s.liquidity}</div><div style={{fontSize:11,color:C.textDim,fontStyle:"italic"}}>{s.note}</div></div>))}</div>}
+              {/* Cycles & Comparison — side by side */}
+              <div style={{display:tab==="cycles-comparison"?"grid":"none",gridTemplateColumns:"1fr 1fr",gap:16,alignItems:"start"}}>
+
+                {/* Cycles */}
+                <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden"}}>
+                  <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,fontSize:11,color:C.textMid,fontFamily:"monospace"}}>{result.cycleCount} total cycle{result.cycleCount>1?"s":""} — each a lump sum onto principal</div>
+                  {result.cycleLog.map((c,i)=>(
+                    <div key={i} style={{padding:"14px 16px",borderBottom:i<result.cycleLog.length-1?`1px solid ${C.border}`:"none",display:"flex",gap:12,alignItems:"flex-start"}}>
+                      <div style={{width:30,height:30,borderRadius:"50%",flexShrink:0,background:i===0?C.accentGlow:C.surfaceAlt,border:`2px solid ${i===0?C.accent:C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"monospace",fontSize:11,fontWeight:700,color:i===0?C.accent:C.textMid}}>{c.cycle}</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,gap:6}}>
+                          <span style={{fontFamily:"monospace",fontSize:12,color:C.text,flexShrink:0}}>{c.month===0?"Day 0 — Initial Draw":`Month ${c.month} — Redraw`}</span>
+                          <span style={{fontFamily:"monospace",fontSize:13,color:C.accent,fontWeight:700,flexShrink:0}}>{fmt(c.draw)}</span>
+                        </div>
+                        <div style={{fontSize:11,color:C.textMid,lineHeight:1.6}}>
+                          {c.month===0
+                            ?`Mortgage → ${fmt(c.mortgageAfter)}. HELOC starts at ${fmt(c.draw-result.savingsApplied)} after ${fmt(result.savingsApplied)} savings.`
+                            :`Drew ${Math.round(redrawPct*100)}% of ${fmt(c.ceiling||0)} ceiling. Mortgage → ${fmt(c.mortgageAfter)}.`}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{padding:"10px 16px",background:C.bg,borderTop:`1px solid ${C.border}`,fontSize:10,color:C.textMid,lineHeight:1.5}}>Each redraw eliminates principal that would have accrued interest for years.</div>
+                </div>
+
+                {/* Comparison */}
+                <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden"}}>
+                  <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,fontSize:11,color:C.textMid,fontFamily:"monospace"}}>Three strategies — same income</div>
+                  {[
+                    {label:"30yr — No Extra Payments",payoff:mo(result.baseline.months),mInt:result.baseline.totalInt,hInt:0,total:result.baseline.totalInt,liquidity:"Full liquidity, no acceleration",color:C.textMid,note:"Default path. Maximum interest paid.",highlight:false},
+                    {label:`Velocity Banking (${Math.round(redrawPct*100)}% redraw)`,payoff:mo(result.months),mInt:result.totalMInt,hInt:result.totalHInt,total:result.total,liquidity:`${fmt(result.ltvCeiling)} line accessible`,color:C.accent,note:"Early payoff + savings + liquidity.",highlight:true},
+                    {label:"Direct Extra Payments",payoff:mo(result.direct.months),mInt:result.direct.totalInt,hInt:0,total:result.direct.totalInt,liquidity:"$0 liquid — locked in equity",color:C.amber,note:"Lowest interest, no liquidity.",highlight:false},
+                  ].map((s,i)=>(
+                    <div key={i} style={{padding:"14px 16px",borderBottom:i<2?`1px solid ${C.border}`:"none",background:s.highlight?C.accentGlow:"transparent",borderLeft:`3px solid ${s.highlight?C.accent:"transparent"}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8,gap:6}}>
+                        <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:s.color,lineHeight:1.3}}>{s.label}</span>
+                        <span style={{fontFamily:"monospace",fontSize:14,fontWeight:700,color:C.text,flexShrink:0}}>{s.payoff}</span>
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}>
+                        {[["Mtg Int",fmt(s.mInt),C.amber],["HELOC Int",fmt(s.hInt),s.hInt>0?C.accent:C.textDim],["Total",fmt(s.total),s.color]].map(([lbl,val,col])=>(
+                          <div key={lbl} style={{background:C.surfaceAlt,borderRadius:5,padding:"7px 8px"}}>
+                            <div style={{fontSize:8,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",marginBottom:2}}>{lbl}</div>
+                            <div style={{fontSize:12,fontFamily:"monospace",color:col,fontWeight:700}}>{val}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{fontSize:10,color:C.textDim}}>{s.liquidity}</div>
+                      <div style={{fontSize:10,color:C.textDim,fontStyle:"italic",marginTop:2}}>{s.note}</div>
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+
+              </div>{/* end tab panels */}
             </>}
 
-            {!result&&<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:36,textAlign:"center"}}><div style={{fontSize:44,marginBottom:14}}>🏠</div><div style={{color:C.red,fontFamily:"monospace",fontSize:15,marginBottom:12,fontWeight:700}}>INSUFFICIENT EQUITY FOR A HELOC</div><div style={{color:C.textMid,fontSize:13,lineHeight:1.8}}>Your mortgage balance (<strong style={{color:C.text}}>{fmt(mortgageBal)}</strong>) exceeds the {ltvLimit}% LTV ceiling (<strong style={{color:C.text}}>{fmt(homeValue*ltvLimit/100)}</strong>).<br/>You need <strong style={{color:C.amber}}>{fmt(mortgageBal-homeValue*ltvLimit/100)}</strong> more equity to qualify at this LTV.<br/><br/>Try raising your home value estimate, adjusting the LTV limit, or lowering your mortgage balance to explore future scenarios.</div></div>}
+            {!result&&<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:36,textAlign:"center"}}>
+              <div style={{fontSize:44,marginBottom:14}}>🏠</div>
+              <div style={{color:C.red,fontFamily:"monospace",fontSize:15,marginBottom:12,fontWeight:700}}>INSUFFICIENT EQUITY FOR A HELOC</div>
+              <div style={{color:C.textMid,fontSize:13,lineHeight:1.8}}>Your mortgage balance (<strong style={{color:C.text}}>{fmt(mortgageBal)}</strong>) exceeds the {ltvLimit}% LTV ceiling (<strong style={{color:C.text}}>{fmt(homeValue*ltvLimit/100)}</strong>).<br/>You need <strong style={{color:C.amber}}>{fmt(mortgageBal-homeValue*ltvLimit/100)}</strong> more equity to qualify.<br/><br/>Try raising your home value estimate, adjusting the LTV limit, or lowering your mortgage balance to explore future scenarios.</div>
+            </div>}
           </div>
+
         </div>}
       </div>
 
       {/* FOOTER */}
-      <div style={{maxWidth:1160,margin:"32px auto 0",padding:"20px 28px 0",borderTop:`1px solid ${C.border}`}}>
+      <div style={{maxWidth:1200,margin:"32px auto 0",padding:"20px 28px 0",borderTop:`1px solid ${C.border}`}}>
         <p style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textAlign:"center",lineHeight:1.8}}>For educational purposes only. Not financial advice. Consult a licensed financial advisor and your lender before making mortgage decisions.<br/>Assumes {ltvLimit}% LTV HELOC · Income deposited 1st & 15th · CC paid day 25 · {appreciationRate}%/yr home appreciation · Exact daily interest accrual.</p>
       </div>
     </div>
