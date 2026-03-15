@@ -456,17 +456,34 @@ function LTVVisual({homeValue,mortgageBal,ltvLimit}){
   return(<div style={{background:C.bg,borderRadius:8,border:`1px solid ${C.border}`,padding:14,marginTop:4}}><div style={{marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{fontSize:10,color:C.textDim,fontFamily:"monospace"}}>Current LTV: <span style={{color:currentLTV>ltvLimit?C.red:C.green,fontWeight:700}}>{currentLTV.toFixed(1)}%</span></span><span style={{fontSize:10,color:C.textDim,fontFamily:"monospace"}}>Limit: {ltvLimit}%</span></div><div style={{height:8,background:C.surface,borderRadius:4,overflow:"hidden",position:"relative"}}><div style={{position:"absolute",height:"100%",borderRadius:4,background:`linear-gradient(90deg,${C.green},${C.accent})`,width:`${currentLTV}%`,transition:"width 0.3s",maxWidth:"100%"}}/><div style={{position:"absolute",height:"100%",width:2,background:C.amber,left:`${ltvLimit}%`,top:0}}/></div><div style={{display:"flex",justifyContent:"space-between",marginTop:3}}><span style={{fontSize:9,color:C.textDim,fontFamily:"monospace"}}>0%</span><span style={{fontSize:9,color:C.amber,fontFamily:"monospace"}}>{ltvLimit}% limit</span><span style={{fontSize:9,color:C.textDim,fontFamily:"monospace"}}>100%</span></div></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>{[["Home Value",fmt(homeValue),C.textMid],[`${ltvLimit}% Ceiling`,fmt(ceiling),C.accent],["Available HELOC",available>0?fmt(available):"None",available>0?C.green:C.red]].map(([l,v,c])=>(<div key={l} style={{textAlign:"center",background:C.surface,borderRadius:6,padding:"8px 4px"}}><div style={{fontSize:9,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",marginBottom:3}}>{l}</div><div style={{fontSize:12,fontFamily:"monospace",color:c,fontWeight:700}}>{v}</div></div>))}</div>{available<=0&&<div style={{marginTop:8,fontSize:10,color:C.red,fontFamily:"monospace",textAlign:"center",lineHeight:1.5}}>⚠ Not enough equity at {ltvLimit}% LTV. Adjust your home value or LTV limit.</div>}</div>);
 }
 
-function StrategyExplainer({redrawPct,surplus,result}){
+function StrategyExplainer({redrawPct,surplus,result,params}){
   const tier=redrawPct<=0.25?"conservative":redrawPct<=0.50?"moderate":redrawPct<=0.75?"aggressive":"maximum";
   const tierColor={conservative:C.green,moderate:C.accent,aggressive:C.amber,maximum:C.red}[tier];
-  // How much does chunk size matter? Compare to a benchmark at 25%
-  const chunkMatters=result&&surplus<2000;
   const tips={
     conservative:"Smaller chunks, more cycles. HELOC balance stays low each cycle — less daily interest. Best when your HELOC rate is significantly higher than your mortgage rate.",
     moderate:"Balanced approach. Fewer cycles with moderately sized draws. Works well for most situations.",
-    aggressive:"Larger chunks reduce cycle count but carry a bigger HELOC balance for longer — more daily interest accumulates. Better when rates are close together.",
-    maximum:"Single large draw, fewest cycles. Maximum HELOC interest exposure. Only makes sense when HELOC and mortgage rates are nearly equal."
+    aggressive:"Larger chunks reduce cycle count but carry a bigger HELOC balance for longer — more daily interest accumulates.",
+    maximum:"Maximum draw each cycle. Only meaningfully different if your approved HELOC limit is very large relative to remaining balance."
   };
+
+  // The approved HELOC line limit (lineCap) = helocCap if set, else maxDraw at origination
+  // This is the real ceiling on every draw — not just a percentage of equity
+  // The slider only changes results when ceiling*pct < lineCap AND ceiling*pct < mBal
+  // Above the point where ceiling*pct hits lineCap, all higher % values are identical
+  const lineCap=result?result.initialDraw:0; // initialDraw = min(maxDraw, lineCap, mortgageBal)
+  
+  // Find the first redraw cycle to compute effective cap
+  const firstRedraw=result&&result.cycleLog.length>1?result.cycleLog[1]:null;
+  const effectivePct=firstRedraw&&firstRedraw.ceiling>0
+    ?Math.round(lineCap/firstRedraw.ceiling*100)
+    :null;
+  const atCap=effectivePct!==null&&Math.round(redrawPct*100)>=effectivePct;
+
+  // What would the actual next draw be?
+  const nextDrawEst=firstRedraw&&firstRedraw.ceiling>0
+    ?Math.min(firstRedraw.ceiling*redrawPct, lineCap)
+    :null;
+
   return(
     <div style={{background:C.bg,borderRadius:8,border:`1px solid ${C.border}`,padding:14,marginTop:8}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -474,8 +491,17 @@ function StrategyExplainer({redrawPct,surplus,result}){
         {result&&<span style={{fontFamily:"monospace",fontSize:11,color:C.textDim}}>{result.cycleCount} cycle{result.cycleCount!==1?"s":""} · ~{Math.round(result.months/result.cycleCount)}mo each</span>}
       </div>
       <div style={{fontSize:12,color:C.textMid,lineHeight:1.6,marginBottom:10}}>{tips[tier]}</div>
-      {result&&surplus>=2000&&<div style={{fontSize:11,color:C.textDim,background:C.surface,borderRadius:6,padding:"8px 10px",marginBottom:10,lineHeight:1.5}}>
-        💡 With your surplus of {fmt(surplus)}/mo, your HELOC clears quickly regardless of chunk size — the payoff difference between settings is small (typically under $2,000 total interest). The slider matters most when monthly surplus is under $1,500/mo.
+      {result&&<div style={{background:C.surface,borderRadius:6,padding:"10px 12px",marginBottom:10,lineHeight:1.6,border:`1px solid ${atCap?C.amber+"55":C.border}`}}>
+        {atCap
+          ?<div style={{fontSize:12,color:C.amber}}>
+            ⚠ <strong>Setting above {effectivePct}% has no additional effect.</strong> Your approved HELOC limit is {fmt(lineCap)} — the actual draw is capped there regardless of this setting. Move the slider to {effectivePct-5}% or below to see real differences in interest paid and cycle count.
+           </div>
+          :<div style={{fontSize:12,color:C.textDim}}>
+            {nextDrawEst?<>Each redraw will draw approximately <strong style={{color:C.accent}}>{fmt(nextDrawEst)}</strong> onto the mortgage (capped by your {fmt(lineCap)} HELOC limit). Increase % to draw more per cycle — decrease % to keep HELOC balances smaller and pay less daily interest.</>
+            :<>Adjust to control how much equity gets chunked onto the mortgage each cycle.</>}
+            {effectivePct!==null&&<> Settings above <strong>{effectivePct}%</strong> hit your line limit and are equivalent.</>}
+           </div>
+        }
       </div>}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
         <div style={{background:C.surface,borderRadius:6,padding:"8px 10px"}}>
@@ -1057,7 +1083,7 @@ function App(){
             {result?<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px 18px"}}>
               <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:14,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>// Chunk Size Per Cycle <InfoTip text="Controls how much equity you draw onto the mortgage each cycle. 25% is the sweet spot for most — keeps HELOC balances small so average daily balance stays low. At low mortgage rates (3–4%), go lower (10–15%). At 6%+, you can go higher."/></div>
               <SliderInput label="Equity Drawn Per Cycle (Chunk Size)" value={redrawPct} min={0.10} max={1.0} step={0.05} onChange={setRedrawPct} format={v=>Math.round(v*100)+"%"} tip="Chunking — what % of available HELOC ceiling gets applied to the mortgage each cycle. Lower % = smaller HELOC balance = less daily interest. The sweet spot is usually 25%."/>
-              <StrategyExplainer redrawPct={redrawPct} surplus={surplus} result={result}/>
+              <StrategyExplainer redrawPct={redrawPct} surplus={surplus} result={result} params={params}/>
             </div>:<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:24,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:C.textDim,fontFamily:"monospace",fontSize:12}}>Enter your numbers in the Calculator tab to see results</span></div>}
           </div>
 
