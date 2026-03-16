@@ -510,7 +510,7 @@ function StrategyExplainer({redrawPct,surplus,result,params}){
         <div style={{background:C.surface,borderRadius:6,padding:"8px 10px"}}>
           <div style={{fontSize:9,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",marginBottom:2}}>Monthly Surplus</div>
           <div style={{fontSize:14,fontFamily:"monospace",color:surplus>0?C.green:C.red,fontWeight:700}}>{fmt(surplus)}</div>
-          <div style={{fontSize:9,color:C.textDim,marginTop:1}}>net HELOC paydown/mo</div>
+          <div style={{fontSize:9,color:C.textDim,marginTop:1}}>{useRentalHeloc?"incl. rental cash flow":"net HELOC paydown/mo"}</div>
         </div>
         <div style={{background:C.surface,borderRadius:6,padding:"8px 10px"}}>
           <div style={{fontSize:9,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",marginBottom:2}}>Chunking Cycles</div>
@@ -663,8 +663,11 @@ function App(){
   const[savings,setSavings]=useState(0);
   // Rental Property HELOC (optional)
   const[useRentalHeloc,setUseRentalHeloc]=useState(false);
+  const[rentalDirection,setRentalDirection]=useState("heloc_on_rental"); // "heloc_on_rental" | "heloc_on_primary"
   const[rentalHomeValue,setRentalHomeValue]=useState(0);
   const[rentalMortgageBal,setRentalMortgageBal]=useState(0);
+  const[rentalMortgageRate,setRentalMortgageRate]=useState(6.5);
+  const[rentalRemainingYears,setRentalRemainingYears]=useState(25);
   const[rentalMortgagePmt,setRentalMortgagePmt]=useState(0);
   const[rentalIncome,setRentalIncome]=useState(0);
   const[rentalHelocRate,setRentalHelocRate]=useState(0);
@@ -696,14 +699,45 @@ function App(){
   // When P+I only: T&I is a separate living expense paid from HELOC
   // When Total w/ escrow: T&I is inside mortgagePmt already — don't double-count
   const simLivingExpenses=pmtMode==="total"?livingExpenses:livingExpenses+taxInsurance;
-  // If rental HELOC is enabled, use rental property for equity + blend in rental income/costs
-  const effectiveHomeValue    = useRentalHeloc&&rentalHomeValue>0 ? rentalHomeValue    : homeValue;
-  const effectiveLtvLimit     = useRentalHeloc&&rentalHomeValue>0 ? rentalLtvLimit     : ltvLimit;
-  const effectiveHelocRate    = useRentalHeloc&&rentalHomeValue>0 ? (rentalHelocRate>0?rentalHelocRate:helocRate+0.5) : helocRate;
-  const effectiveIncome       = useRentalHeloc ? monthlyIncome+rentalIncome : monthlyIncome;
-  const effectiveLivingExp    = useRentalHeloc ? simLivingExpenses+rentalMortgagePmt   : simLivingExpenses;
-  const effectiveRentalMortBal= useRentalHeloc&&rentalMortgageBal>0 ? rentalMortgageBal : 0;
-  const params={mortgageBal,mortgageRate,mortgagePmt:piOnly+taxInsurance,homeValue:effectiveHomeValue,helocRate:effectiveHelocRate,monthlyIncome:effectiveIncome,livingExpenses:effectiveLivingExp,monthlyDebts:0,savings,redrawPct,ltvLimit:effectiveLtvLimit,appreciationRate,helocFees,remainingYears,helocCap,rentalMortBal:useRentalHeloc?rentalMortgageBal:0};
+  // Rental HELOC — two directions:
+  // A "heloc_on_rental":  borrow against rental equity → pay down PRIMARY mortgage
+  // B "heloc_on_primary": borrow against primary home  → pay down RENTAL mortgage
+  const isRentalA = useRentalHeloc && rentalDirection==="heloc_on_rental";
+  const isRentalB = useRentalHeloc && rentalDirection==="heloc_on_primary";
+
+  // Direction A: rental is the HELOC source, primary is the payoff target
+  const effectiveHomeValue = isRentalA&&rentalHomeValue>0 ? rentalHomeValue : homeValue;
+  const effectiveLtvLimit  = isRentalA&&rentalHomeValue>0 ? rentalLtvLimit  : ltvLimit;
+  const effectiveHelocRate = isRentalA&&rentalHomeValue>0 ? (rentalHelocRate>0?rentalHelocRate:helocRate+0.5) : helocRate;
+
+  // Direction B: primary is HELOC source, rental mortgage is the payoff target
+  const effectiveMortgageBal  = isRentalB&&rentalMortgageBal>0 ? rentalMortgageBal  : mortgageBal;
+  const effectiveMortgageRate = isRentalB&&rentalMortgageBal>0 ? rentalMortgageRate : mortgageRate;
+  const effectiveRemYears     = isRentalB&&rentalMortgageBal>0 ? Math.max(1,rentalRemainingYears): remainingYears;
+  const effectiveMortgagePmt  = isRentalB&&rentalMortgageBal>0 ? rentalMortgagePmt  : piOnly+taxInsurance;
+
+  // Income: add rental income in both directions
+  const effectiveIncome    = useRentalHeloc ? monthlyIncome+rentalIncome : monthlyIncome;
+  // Expenses: Direction A adds rental mortgage pmt (it's an ongoing cost)
+  //           Direction B does NOT add rental pmt (it's the target being eliminated)
+  const effectiveLivingExp = isRentalA ? simLivingExpenses+rentalMortgagePmt : simLivingExpenses;
+
+  const params={
+    mortgageBal:    effectiveMortgageBal,
+    mortgageRate:   effectiveMortgageRate,
+    mortgagePmt:    effectiveMortgagePmt,
+    homeValue:      effectiveHomeValue,
+    helocRate:      effectiveHelocRate,
+    monthlyIncome:  effectiveIncome,
+    livingExpenses: effectiveLivingExp,
+    monthlyDebts:   0,
+    savings,redrawPct,
+    ltvLimit:       effectiveLtvLimit,
+    appreciationRate,helocFees,
+    remainingYears: effectiveRemYears,
+    helocCap,
+    rentalMortBal:  isRentalA ? rentalMortgageBal : 0,
+  };
   const result=simulate(params);
 
   const verdict=!result?"no_equity":result.interestSavedVsBaseline>80000?"strongly_yes":result.interestSavedVsBaseline>30000?"yes":result.interestSavedVsBaseline>5000?"maybe":"no";
@@ -1026,29 +1060,79 @@ function App(){
                   <span style={{color:useRentalHeloc?C.amber:C.textDim,fontSize:18,fontFamily:"monospace",transition:"transform 0.2s",display:"inline-block",transform:useRentalHeloc?"rotate(0deg)":"rotate(-90deg)"}}>▾</span>
                 </button>
                 <div className={`accordion-body ${useRentalHeloc?"open":"closed"}`} style={{padding:"0 18px",borderTop:useRentalHeloc?`1px solid ${C.border}`:"none"}}>
-                  <div style={{paddingTop:4,paddingBottom:18}}>
-                    <div style={{background:C.amber+"11",border:`1px solid ${C.amber}33`,borderRadius:8,padding:"10px 14px",marginBottom:16,fontSize:12,color:C.amber,lineHeight:1.6}}>
-                      Use this when you plan to pull a HELOC on a rental or investment property and apply those funds toward your primary mortgage. Rates and LTV limits are typically less favorable than a primary residence HELOC — confirm with your lender before planning around these numbers.
-                    </div>
-                    <NumInput label="Rental Property Value" value={rentalHomeValue} onChange={setRentalHomeValue} tip="Current market value of the rental/investment property you'll borrow against."/>
-                    <NumInput label="Rental Mortgage Balance (if any)" value={rentalMortgageBal} onChange={setRentalMortgageBal} tip="Outstanding mortgage on the rental property. Enter 0 if the property is paid off — that gives you maximum equity."/>
-                    <NumInput label="Rental Mortgage Payment (if any)" value={rentalMortgagePmt} onChange={setRentalMortgagePmt} tip="Monthly mortgage payment on the rental property. This flows through the HELOC as an expense each month."/>
-                    <ExpenseRow label="Monthly Rental Income" value={rentalIncome} onChange={setRentalIncome} tip="Net rent collected each month. This adds to your income deposited into the HELOC, accelerating paydown."/>
-                    <div style={{marginBottom:14}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-                        <Label tip="Investment property HELOCs typically run 0.5–2% higher than primary residence rates. Check with your lender.">Rental HELOC Rate</Label>
-                        <span style={{fontSize:12,color:C.amber,fontFamily:"monospace"}}>{rentalHelocRate>0?rentalHelocRate.toFixed(2)+"%":"default: HELOC rate + 0.5%"}</span>
+                  <div style={{paddingTop:12,paddingBottom:18}}>
+
+                    {/* ── Direction selector ── */}
+                    <div style={{marginBottom:16}}>
+                      <div style={{fontSize:11,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Which direction?</div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                        {[
+                          {id:"heloc_on_rental",  icon:"🏘→🏠", title:"HELOC on rental", desc:"Borrow against your rental property equity to pay down your primary home mortgage"},
+                          {id:"heloc_on_primary", icon:"🏠→🏘", title:"HELOC on primary home", desc:"Borrow against your primary home equity to pay down your rental property mortgage"},
+                        ].map(opt=>(
+                          <button key={opt.id} onClick={()=>setRentalDirection(opt.id)}
+                            style={{padding:"12px 14px",borderRadius:8,border:`2px solid ${rentalDirection===opt.id?C.amber:C.border}`,background:rentalDirection===opt.id?C.amber+"11":C.bg,cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
+                            <div style={{fontSize:16,marginBottom:4}}>{opt.icon}</div>
+                            <div style={{fontSize:12,fontWeight:700,color:rentalDirection===opt.id?C.amber:C.text,fontFamily:"monospace",marginBottom:4}}>{opt.title}</div>
+                            <div style={{fontSize:11,color:C.textDim,lineHeight:1.5}}>{opt.desc}</div>
+                          </button>
+                        ))}
                       </div>
-                      <SliderInput label="Rental HELOC Rate" value={rentalHelocRate>0?rentalHelocRate:helocRate+0.5} min={4} max={14} step={0.25} onChange={setRentalHelocRate} format={v=>v.toFixed(2)+"%"} hint="Investment property rates typically higher" tip="Most lenders charge 0.5–2% more for non-owner-occupied HELOC. Leave at default or set specifically."/>
                     </div>
-                    <SliderInput label="Rental LTV Limit" value={rentalLtvLimit} min={60} max={80} step={5} onChange={setRentalLtvLimit} format={v=>v+"%"} hint="Most lenders: 70–75% for investment property" tip="Investment property HELOCs usually cap at 70–75% LTV, vs 80% for primary residences."/>
-                    {rentalHomeValue>0&&<div style={{background:C.bg,borderRadius:8,border:`1px solid ${C.border}`,padding:"10px 14px",marginTop:8,fontSize:12,fontFamily:"monospace"}}>
-                      <div style={{color:C.textDim,marginBottom:4}}>Available rental equity (HELOC ceiling):</div>
-                      <div style={{fontSize:16,fontWeight:700,color:Math.max(0,rentalHomeValue*rentalLtvLimit/100-rentalMortgageBal)>5000?C.amber:C.red}}>
-                        {fmt(Math.max(0,rentalHomeValue*rentalLtvLimit/100-rentalMortgageBal))}
+
+                    {/* ── Direction A: HELOC on rental → pay primary ── */}
+                    {rentalDirection==="heloc_on_rental"&&<>
+                      <div style={{background:C.amber+"11",border:`1px solid ${C.amber}33`,borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.amber,lineHeight:1.6}}>
+                        You own a rental/investment property with equity. You'll open a HELOC on that property and use those funds to pay down your primary residence mortgage. Rental property HELOCs typically have higher rates and lower LTV limits than primary residence HELOCs.
                       </div>
-                      {Math.max(0,rentalHomeValue*rentalLtvLimit/100-rentalMortgageBal)<5000&&<div style={{color:C.red,marginTop:4,fontSize:11}}>⚠ Less than $5,000 available — not enough equity to proceed.</div>}
-                    </div>}
+                      <NumInput label="Rental Property Value" value={rentalHomeValue} onChange={setRentalHomeValue} tip="Current market value of the rental/investment property you'll borrow against."/>
+                      <NumInput label="Rental Mortgage Balance (if any)" value={rentalMortgageBal} onChange={setRentalMortgageBal} tip="Outstanding mortgage on the rental property. Enter 0 if paid off — more equity available."/>
+                      <NumInput label="Rental Mortgage Payment (if any)" value={rentalMortgagePmt} onChange={setRentalMortgagePmt} tip="Monthly payment on the rental mortgage. This flows through the HELOC as a monthly expense alongside your primary mortgage payment."/>
+                      <ExpenseRow label="Monthly Rental Income" value={rentalIncome} onChange={setRentalIncome} tip="Net rent you collect each month. Deposits into the HELOC alongside your paycheck, accelerating paydown."/>
+                      <div style={{marginBottom:14}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                          <Label tip="Investment property HELOCs typically run 0.5–2% higher than primary residence rates.">Rental HELOC Rate</Label>
+                          <span style={{fontSize:12,color:C.amber,fontFamily:"monospace"}}>{rentalHelocRate>0?rentalHelocRate.toFixed(2)+"%":"default: "+((helocRate+0.5)).toFixed(2)+"%"}</span>
+                        </div>
+                        <SliderInput label="Rental HELOC Rate" value={rentalHelocRate>0?rentalHelocRate:helocRate+0.5} min={4} max={14} step={0.25} onChange={setRentalHelocRate} format={v=>v.toFixed(2)+"%"} hint="Typically 0.5–2% above primary rate" tip="Most lenders charge more for non-owner-occupied HELOC. Leave at default or set precisely."/>
+                      </div>
+                      <SliderInput label="Rental LTV Limit" value={rentalLtvLimit} min={60} max={80} step={5} onChange={setRentalLtvLimit} format={v=>v+"%"} hint="Most lenders: 70–75% for investment property" tip="Rental/investment HELOCs usually cap at 70–75% LTV vs 80% for primary."/>
+                      {rentalHomeValue>0&&(()=>{
+                        const avail=Math.max(0,rentalHomeValue*rentalLtvLimit/100-rentalMortgageBal);
+                        return<div style={{background:C.bg,borderRadius:8,border:`1px solid ${C.border}`,padding:"10px 14px",marginTop:8,fontSize:12,fontFamily:"monospace"}}>
+                          <div style={{color:C.textDim,marginBottom:4}}>Available rental equity (HELOC ceiling):</div>
+                          <div style={{fontSize:16,fontWeight:700,color:avail>5000?C.amber:C.red}}>{fmt(avail)}</div>
+                          {avail<5000&&<div style={{color:C.red,marginTop:4,fontSize:11}}>⚠ Less than $5,000 available — not enough equity to proceed.</div>}
+                        </div>;
+                      })()}
+                    </>}
+
+                    {/* ── Direction B: HELOC on primary → pay rental ── */}
+                    {rentalDirection==="heloc_on_primary"&&<>
+                      <div style={{background:C.accent+"11",border:`1px solid ${C.accent}33`,borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.accent,lineHeight:1.6}}>
+                        You have equity in your primary home. You'll open a HELOC on your primary residence and use those funds to pay down the mortgage on your rental property. Your primary home HELOC settings above apply. Enter the rental mortgage details below.
+                      </div>
+                      <div style={{fontSize:11,color:C.textDim,fontFamily:"monospace",padding:"8px 10px",background:C.bg,borderRadius:6,marginBottom:14,lineHeight:1.5}}>
+                        The mortgage details you entered at the top of this calculator are your <strong style={{color:C.text}}>primary home mortgage</strong>. The fields below describe your <strong style={{color:C.text}}>rental property mortgage</strong> — the loan being paid off.
+                      </div>
+                      <NumInput label="Rental Mortgage Balance" value={rentalMortgageBal} onChange={setRentalMortgageBal} tip="Outstanding balance on the rental property mortgage — this is the loan you're paying off with the strategy."/>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:4}}>
+                        <NumInput label="Rental Mortgage Rate (%)" value={rentalMortgageRate} onChange={setRentalMortgageRate} prefix="" tip="Interest rate on the rental mortgage. Used to compute amortization and how quickly principal drops."/>
+                        <NumInput label="Rental Years Remaining" value={rentalRemainingYears} onChange={setRentalRemainingYears} prefix="" tip="How many years are left on the rental mortgage."/>
+                      </div>
+                      <NumInput label="Rental Monthly Payment (P+I)" value={rentalMortgagePmt} onChange={setRentalMortgagePmt} tip="Monthly principal + interest payment on the rental mortgage. This is the payment the HELOC will make each month."/>
+                      <ExpenseRow label="Monthly Rental Income" value={rentalIncome} onChange={setRentalIncome} tip="Rent you collect each month. Deposits into the HELOC alongside your paycheck — helps pay down both the HELOC and rental mortgage faster."/>
+                      {rentalMortgageBal>0&&(()=>{
+                        const helocAvail=Math.max(0,homeValue*ltvLimit/100-mortgageBal);
+                        return<div style={{background:C.bg,borderRadius:8,border:`1px solid ${C.border}`,padding:"10px 14px",marginTop:8,fontSize:12,fontFamily:"monospace"}}>
+                          <div style={{color:C.textDim,marginBottom:4}}>Available primary home equity (HELOC ceiling):</div>
+                          <div style={{fontSize:16,fontWeight:700,color:helocAvail>5000?C.accent:C.red}}>{fmt(helocAvail)}</div>
+                          {helocAvail<5000&&<div style={{color:C.red,marginTop:4,fontSize:11}}>⚠ Less than $5,000 available in primary home — not enough equity for a HELOC.</div>}
+                          <div style={{color:C.textDim,marginTop:6,fontSize:11}}>Uses your primary home value ({fmt(homeValue)}) and HELOC settings above.</div>
+                        </div>;
+                      })()}
+                    </>}
+
                   </div>
                 </div>
               </div>
@@ -1108,13 +1192,19 @@ function App(){
             <button onClick={()=>setActiveSection("calculator")} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:7,padding:"9px 18px",cursor:"pointer",fontFamily:"monospace",fontSize:13,color:C.textMid,letterSpacing:"0.05em",display:"flex",alignItems:"center",gap:6}}><span>←</span> Edit Numbers</button>
             <div style={{fontSize:13,color:C.textDim,fontFamily:"monospace"}}>Adjust the <span style={{color:C.accent,cursor:"pointer",textDecoration:"underline"}} onClick={()=>setActiveSection("calculator")}>calculator</span> and come back any time</div>
           </div>
-          {useRentalHeloc&&<div style={{background:C.amber+"11",border:`1px solid ${C.amber}44`,borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
-            <span style={{fontSize:22,flexShrink:0}}>🏘</span>
+          {useRentalHeloc&&<div style={{background:rentalDirection==="heloc_on_rental"?C.amber+"11":C.accent+"11",border:`1px solid ${rentalDirection==="heloc_on_rental"?C.amber:C.accent}44`,borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
+            <span style={{fontSize:22,flexShrink:0}}>{rentalDirection==="heloc_on_rental"?"🏘→🏠":"🏠→🏘"}</span>
             <div>
-              <div style={{fontSize:12,fontWeight:700,color:C.amber,fontFamily:"monospace",marginBottom:3}}>HELOC SOURCED FROM RENTAL / INVESTMENT PROPERTY</div>
-              <div style={{fontSize:12,color:C.textDim,lineHeight:1.5}}>
-                These results use equity from your rental property ({rentalHomeValue>0?fmt(rentalHomeValue):"value not set"} @ {rentalLtvLimit}% LTV) as the HELOC source, applied toward your primary mortgage. Rental income ({rentalIncome>0?fmt(rentalIncome)+"/mo":"not set"}) and rental mortgage payment ({rentalMortgagePmt>0?fmt(rentalMortgagePmt)+"/mo":"$0"}) are included in cash flow. Investment property HELOC rates are typically higher than primary residence rates — verify with your lender.
-              </div>
+              {rentalDirection==="heloc_on_rental"
+                ?<><div style={{fontSize:12,fontWeight:700,color:C.amber,fontFamily:"monospace",marginBottom:3}}>HELOC ON RENTAL PROPERTY → PAYING DOWN PRIMARY MORTGAGE</div>
+                   <div style={{fontSize:12,color:C.textDim,lineHeight:1.5}}>
+                     Equity source: rental property ({rentalHomeValue>0?fmt(rentalHomeValue):"not set"} @ {rentalLtvLimit}% LTV). Target: your primary residence mortgage. Rental income ({rentalIncome>0?fmt(rentalIncome)+"/mo":"$0"}) and rental mortgage payment ({rentalMortgagePmt>0?fmt(rentalMortgagePmt)+"/mo":"$0"}) included in monthly cash flow.
+                   </div></>
+                :<><div style={{fontSize:12,fontWeight:700,color:C.accent,fontFamily:"monospace",marginBottom:3}}>HELOC ON PRIMARY HOME → PAYING DOWN RENTAL MORTGAGE</div>
+                   <div style={{fontSize:12,color:C.textDim,lineHeight:1.5}}>
+                     Equity source: your primary residence ({fmt(homeValue)} @ {ltvLimit}% LTV, standard HELOC rate). Target: rental property mortgage ({rentalMortgageBal>0?fmt(rentalMortgageBal):"not set"} @ {rentalMortgageRate}%). Rental income ({rentalIncome>0?fmt(rentalIncome)+"/mo":"$0"}) included as monthly income deposited into HELOC.
+                   </div></>
+              }
             </div>
           </div>}
           {/* ── TOP ROW: Verdict + Strategy Settings side by side ── */}
@@ -1322,7 +1412,7 @@ function App(){
                 <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:12}}>// Your Payoff Story — The Velocity Banking Cycle</div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:0}}>
                   {[
-                    {step:"Day 0 — The Chunk",color:C.accent,text:`Draw ${fmt(result.initialDraw)} from ${useRentalHeloc?'rental property':'your'} HELOC → apply to primary mortgage principal. Balance drops to ${fmt(mortgageBal-result.initialDraw)}. Apply ${fmt(result.savingsApplied)} savings → HELOC starts at ${fmt(result.initialDraw-result.savingsApplied)}.`},
+                    {step:"Day 0 — The Chunk",color:C.accent,text:`Draw ${fmt(result.initialDraw)} from ${useRentalHeloc&&rentalDirection==="heloc_on_rental"?"rental property HELOC":useRentalHeloc&&rentalDirection==="heloc_on_primary"?"primary home HELOC":"your HELOC"} → apply to ${useRentalHeloc&&rentalDirection==="heloc_on_primary"?"rental":"primary"} mortgage principal. Balance drops to ${fmt(params.mortgageBal-result.initialDraw)}. Apply ${fmt(result.savingsApplied)} savings → HELOC starts at ${fmt(result.initialDraw-result.savingsApplied)}.`},
                     {step:"Paycheck Parking",color:C.green,text:`Direct deposit entire paycheck (${fmt(monthlyIncome)}) into HELOC on payday. Every dollar immediately reduces average daily balance. Bills go on credit card — paid from HELOC at month end.`},
                     {step:"Daily Interest",color:C.amber,text:`HELOC charges interest daily on outstanding balance only. Month 1: ~${fmt((result.initialDraw-result.savingsApplied)*(helocRate/100/12))}. Drops every month as balance declines.`},
                     {step:"Cycle Completion",color:C.accent,text:`HELOC hits $0 in ~${Math.round(result.months/result.cycleCount)} months. Draw the next equity chunk onto the mortgage. Repeat ${result.cycleCount}× total cycles.`},
