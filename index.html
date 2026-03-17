@@ -30,6 +30,58 @@
   .accordion-body{overflow:hidden;transition:max-height 0.28s cubic-bezier(0.4,0,0.2,1),opacity 0.2s ease;}
   .accordion-body.open{max-height:2000px;opacity:1;}
   .accordion-body.closed{max-height:0;opacity:0;}
+  @media print{
+    @page{margin:1.5cm 1.5cm 1.5cm 1.5cm;size:A4 portrait;}
+
+    /* Reset all backgrounds and text to print-friendly */
+    *{
+      background:#fff!important;
+      color:#111!important;
+      border-color:#ccc!important;
+      box-shadow:none!important;
+      text-shadow:none!important;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+
+    /* Show print-only header */
+    .print-header{display:block!important;}
+
+    /* Hide everything except results content */
+    .no-print{display:none!important;}
+    nav,header{display:none!important;}
+    .tooltip .tip{display:none!important;}
+
+    /* Keep chart line colors — SVG stroke colors are separate from CSS color */
+    svg line,svg path{stroke-color:inherit;}
+
+    /* Keep accent colors on key numbers */
+    .print-accent{color:#0077aa!important;}
+
+    /* Table print improvements */
+    table{border-collapse:collapse!important;width:100%!important;}
+    th,td{border:1px solid #ccc!important;padding:6px 10px!important;font-size:11px!important;}
+    thead{display:table-header-group;}
+    tr{page-break-inside:avoid;}
+
+    /* Card grid — prevent awkward splits */
+    .print-card{page-break-inside:avoid;border:1px solid #ccc!important;}
+
+    /* Page breaks */
+    .print-break-before{page-break-before:always;}
+
+    /* Accordion closed sections stay hidden in print */
+    .accordion-body.closed{display:none!important;}
+
+    /* Reduce font sizes slightly for paper */
+    body{font-size:11px!important;}
+
+    /* Chart text — force dark */
+    text{fill:#111!important;}
+
+    /* Hide tab switcher and interactive elements */
+    button:not(.print-keep){display:none!important;}
+  }
   .checklist-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #1e2d45;}
   .checklist-item:last-child{border-bottom:none;}
 </style>
@@ -129,7 +181,7 @@ function simulate(p){
       const totalPaid=totalMInt+totalHInt+totalFeesPaid;
       const blendedRate=mBal>0?(totalMInt/month*12/((mortgageBal+mBal)/2)*100):0;
       const savedVsNothing=bIntSoFar-totalPaid;
-      yearData.push({year:month/12,mBal,hBal,yrMInt,yrHInt,yrTotal:yrMInt+yrHInt,cumTotal:totalPaid,liquidity:Math.max(0,currentHomeValue*ltv-mBal-hBal),homeValue:currentHomeValue,blendedRate,savedVsNothing,hasCycle:cycleLog.some(c=>c.month>0&&Math.floor(c.month/12)+1===month/12)});
+      yearData.push({year:month/12,mBal,hBal,yrMInt,yrHInt,yrTotal:yrMInt+yrHInt,cumTotal:totalPaid,liquidity:Math.max(0,currentHomeValue*ltv-mBal-hBal),homeValue:currentHomeValue,blendedRate,savedVsNothing,hasCycle:cycleLog.some(c=>c.month>0&&Math.floor((c.month-1)/12)===month/12-1)});
       yrMInt=0;yrHInt=0;
     }
   }
@@ -227,21 +279,36 @@ function useNumberInput(value,onChange){
   const[raw,setRaw]=useState(value===0?"":String(value));
   const isFocused=React.useRef(false);
   const userEdited=React.useRef(false);
+  const lastCommitted=React.useRef(value);
   useEffect(()=>{
-    // Only sync from parent if user hasn't touched this field
-    if(!isFocused.current&&!userEdited.current){
+    // Only sync from parent if:
+    // (a) user hasn't edited this field, OR
+    // (b) the parent value now matches what we last committed (confirmed propagation)
+    if(!userEdited.current){
+      setRaw(value===0?"":String(value));
+    } else if(value===lastCommitted.current){
+      // Parent confirmed our committed value — safe to allow future syncs
+      userEdited.current=false;
       setRaw(value===0?"":String(value));
     }
+    // Otherwise: parent hasn't caught up yet — keep showing what user typed
   },[value]);
   const handleFocus=()=>{isFocused.current=true;};
   const handleChange=e=>{userEdited.current=true;setRaw(e.target.value);};
   const handleBlur=e=>{
     isFocused.current=false;
-    const n=parseFloat(e.target.value);
-    if(isNaN(n)||n<0){userEdited.current=false;setRaw("");onChange(0);}
-    else{setRaw(String(n));onChange(n);}
-    // After commit, allow future parent syncs again
-    userEdited.current=false;
+    const n=parseFloat(e.target.value.replace(/,/g,""));
+    if(isNaN(n)||n<0){
+      userEdited.current=false;
+      lastCommitted.current=0;
+      setRaw("");
+      onChange(0);
+    } else {
+      lastCommitted.current=n;
+      // Do NOT reset userEdited here — wait for parent to confirm via useEffect
+      setRaw(String(n));
+      onChange(n);
+    }
   };
   return{raw,handleFocus,handleChange,handleBlur};
 }
@@ -681,6 +748,100 @@ function App(){
   const toggleSection=key=>setOpenSections(s=>{const wasOpen=!!s[key];const next={};next[key]=!wasOpen;return next;});
   const[tab,setTab]=useState("year-by-year");
   const[activeSection,setActiveSection]=useState("calculator");
+  // ── LOCALSTORAGE PERSISTENCE ──
+  // Load saved inputs on first mount
+  useEffect(()=>{
+    try{
+      const saved=localStorage.getItem("vb_calc_v1");
+      if(!saved) return;
+      const d=JSON.parse(saved);
+      const s=(key,setter,def)=>{if(d[key]!==undefined){setter(d[key]);}};
+      s("mortgageBal",setMortgageBal,377156);
+      s("mortgageRate",setMortgageRate,3.25);
+      s("pmtMode",setPmtMode,"pi");
+      s("mortgagePmt",setMortgagePmt,1896);
+      s("totalPmt",setTotalPmt,2246);
+      s("propTaxMode",setPropTaxMode,"monthly");
+      s("propTaxMonthly",setPropTaxMonthly,0);
+      s("propTaxAnnual",setPropTaxAnnual,0);
+      s("insurMode",setInsurMode,"monthly");
+      s("insurMonthly",setInsurMonthly,0);
+      s("insurAnnual",setInsurAnnual,0);
+      s("endMonth",setEndMonth,new Date().getMonth()+1);
+      s("endYear",setEndYear,new Date().getFullYear()+28);
+      s("homeValue",setHomeValue,400000);
+      s("helocRate",setHelocRate,8.5);
+      s("helocCap",setHelocCap,0);
+      s("ltvLimit",setLtvLimit,80);
+      s("appreciationRate",setAppreciationRate,3);
+      s("helocOrigination",setHelocOrigination,0);
+      s("helocAnnual",setHelocAnnual,0);
+      s("primaryIncome",setPrimaryIncome,0);
+      s("secondaryIncome",setSecondaryIncome,0);
+      s("otherIncome",setOtherIncome,0);
+      s("expenseMode",setExpenseMode,"simple");
+      s("totalExpensesSimple",setTotalExpensesSimple,0);
+      s("carPayments",setCarPayments,0);
+      s("studentLoans",setStudentLoans,0);
+      s("otherDebts",setOtherDebts,0);
+      s("groceries",setGroceries,0);
+      s("diningOut",setDiningOut,0);
+      s("utilities",setUtilities,0);
+      s("gas",setGas,0);
+      s("carInsurance",setCarInsurance,0);
+      s("subscriptions",setSubscriptions,0);
+      s("childcare",setChildcare,0);
+      s("medicalPharmacy",setMedicalPharmacy,0);
+      s("clothing",setClothing,0);
+      s("homeRepairs",setHomeRepairs,0);
+      s("entertainment",setEntertainment,0);
+      s("petCosts",setPetCosts,0);
+      s("miscellaneous",setMiscellaneous,0);
+      s("savings",setSavings,0);
+      s("redrawPct",setRedrawPct,0.25);
+      s("useRentalHeloc",setUseRentalHeloc,false);
+      s("rentalDirection",setRentalDirection,"heloc_on_rental");
+      s("rentalHomeValue",setRentalHomeValue,0);
+      s("rentalMortgageBal",setRentalMortgageBal,0);
+      s("rentalMortgageRate",setRentalMortgageRate,6.5);
+      s("rentalRemainingYears",setRentalRemainingYears,25);
+      s("rentalMortgagePmt",setRentalMortgagePmt,0);
+      s("rentalIncome",setRentalIncome,0);
+      s("rentalHelocRate",setRentalHelocRate,0);
+      s("rentalLtvLimit",setRentalLtvLimit,75);
+    }catch(e){}
+  },[]);
+
+  // Save all inputs whenever they change
+  useEffect(()=>{
+    try{
+      localStorage.setItem("vb_calc_v1",JSON.stringify({
+        mortgageBal,mortgageRate,pmtMode,mortgagePmt,totalPmt,
+        propTaxMode,propTaxMonthly,propTaxAnnual,
+        insurMode,insurMonthly,insurAnnual,
+        endMonth,endYear,homeValue,
+        helocRate,helocCap,ltvLimit,appreciationRate,helocOrigination,helocAnnual,
+        primaryIncome,secondaryIncome,otherIncome,
+        expenseMode,totalExpensesSimple,
+        carPayments,studentLoans,otherDebts,groceries,diningOut,utilities,gas,
+        carInsurance,subscriptions,childcare,medicalPharmacy,clothing,homeRepairs,
+        entertainment,petCosts,miscellaneous,
+        savings,redrawPct,
+        useRentalHeloc,rentalDirection,rentalHomeValue,rentalMortgageBal,
+        rentalMortgageRate,rentalRemainingYears,rentalMortgagePmt,rentalIncome,
+        rentalHelocRate,rentalLtvLimit,
+      }));
+    }catch(e){}
+  },[mortgageBal,mortgageRate,pmtMode,mortgagePmt,totalPmt,
+     propTaxMode,propTaxMonthly,propTaxAnnual,insurMode,insurMonthly,insurAnnual,
+     endMonth,endYear,homeValue,helocRate,helocCap,ltvLimit,appreciationRate,
+     helocOrigination,helocAnnual,primaryIncome,secondaryIncome,otherIncome,
+     expenseMode,totalExpensesSimple,carPayments,studentLoans,otherDebts,groceries,
+     diningOut,utilities,gas,carInsurance,subscriptions,childcare,medicalPharmacy,
+     clothing,homeRepairs,entertainment,petCosts,miscellaneous,savings,redrawPct,
+     useRentalHeloc,rentalDirection,rentalHomeValue,rentalMortgageBal,rentalMortgageRate,
+     rentalRemainingYears,rentalMortgagePmt,rentalIncome,rentalHelocRate,rentalLtvLimit]);
+
   // Derived
   const propTax = propTaxMode==="escrow"?0 : propTaxMode==="annual"?propTaxAnnual/12 : propTaxMonthly;
   const homeInsur = insurMode==="escrow"?0 : insurMode==="annual"?insurAnnual/12 : insurMonthly;
@@ -720,7 +881,12 @@ function App(){
   const effectiveIncome    = useRentalHeloc ? monthlyIncome+rentalIncome : monthlyIncome;
   // Expenses: Direction A adds rental mortgage pmt (it's an ongoing cost)
   //           Direction B does NOT add rental pmt (it's the target being eliminated)
-  const effectiveLivingExp = isRentalA ? simLivingExpenses+rentalMortgagePmt : simLivingExpenses;
+  // Direction A: rental mortgage pmt is an ongoing cost through the HELOC
+  // Direction B: primary mortgage pmt still comes from user's income — must be subtracted
+  //              from available HELOC cash flow (user pays primary mtg separately each month)
+  const effectiveLivingExp = isRentalA ? simLivingExpenses+rentalMortgagePmt
+                           : isRentalB ? simLivingExpenses+(piOnly+taxInsurance)
+                           : simLivingExpenses;
 
   const params={
     mortgageBal:    effectiveMortgageBal,
@@ -740,13 +906,39 @@ function App(){
   };
   const result=simulate(params);
 
-  const verdict=!result?"no_equity":result.interestSavedVsBaseline>80000?"strongly_yes":result.interestSavedVsBaseline>30000?"yes":result.interestSavedVsBaseline>5000?"maybe":"no";
+  const verdict=(()=>{
+    if(!result) return "no_equity";
+    const saved=result.interestSavedVsBaseline;
+    const premium=result.extraCostVsDirect;       // + means VB costs more than direct
+    const moDiff=result.months-result.direct.months; // + means direct pays off faster
+    if(saved<=5000) return "no";
+    // Direct beats VB on BOTH cost AND speed — VB's value is liquidity only
+    if(premium>10000&&moDiff>0) return "consider_direct";
+    // VB cheaper than direct — wins on all fronts
+    if(premium<0&&saved>30000) return "strongly_yes";
+    // VB saves a lot and barely costs more than direct
+    if(saved>80000&&premium<5000) return "strongly_yes";
+    // Solid savings, reasonable premium
+    if(saved>30000&&premium<15000) return "yes";
+    // Real savings but paying a meaningful premium for liquidity
+    if(saved>30000) return "yes_liquidity";
+    return "maybe";
+  })();
   const vc={
-    strongly_yes:{label:"HIGHLY RECOMMENDED",color:C.green,bg:C.greenDim,icon:"⚡",sub:"Velocity banking is a strong fit. Significant interest savings while keeping money fully accessible."},
-    yes:{label:"RECOMMENDED",color:C.green,bg:C.greenDim,icon:"✓",sub:"Good candidate. Meaningful interest savings with full liquidity maintained throughout."},
-    maybe:{label:"MARGINAL BENEFIT",color:C.amber,bg:C.amberDim,icon:"~",sub:"Some benefit, but modest. Worth it if liquidity matters more than minimizing total interest."},
-    no:{label:"LIMITED BENEFIT",color:C.red,bg:C.redDim,icon:"✗",sub:"Rate spread is unfavorable. Direct extra payments may serve you better. Check the Comparison tab."},
-    no_equity:{label:"INSUFFICIENT EQUITY",color:C.textDim,bg:"#111",icon:"—",sub:"Not enough home equity for a HELOC at this LTV. Adjust home value or LTV limit to explore."}
+    strongly_yes:  {label:"HIGHLY RECOMMENDED",  color:C.green,  bg:C.greenDim,  icon:"⚡",
+      sub:"Velocity banking is the right move. Strong interest savings and your money stays fully accessible throughout."},
+    yes:           {label:"RECOMMENDED",          color:C.green,  bg:C.greenDim,  icon:"✓",
+      sub:"Good candidate. Meaningful savings vs standard amortization with liquidity maintained. The small premium over direct payments buys you full access to your equity."},
+    yes_liquidity: {label:"WORKS — CHECK THE TRADE-OFF", color:C.green, bg:C.greenDim, icon:"◈",
+      sub:"VB saves meaningfully vs doing nothing, but direct extra payments would cost less overall. The difference is your money stays accessible in the HELOC. See the Comparison tab."},
+    maybe:         {label:"MARGINAL BENEFIT",     color:C.amber,  bg:C.amberDim,  icon:"~",
+      sub:"Some benefit vs standard amortization, but modest. Worth it if liquidity matters more than minimizing total interest paid."},
+    consider_direct:{label:"CONSIDER DIRECT PAYMENTS", color:C.amber, bg:C.amberDim, icon:"⚠",
+      sub:"Direct extra payments beat velocity banking on both total cost and payoff speed in your scenario. VB still keeps your equity accessible — but if you don't need that liquidity, direct payments win here."},
+    no:            {label:"LIMITED BENEFIT",      color:C.red,    bg:C.redDim,    icon:"✗",
+      sub:"Insufficient savings vs standard amortization. The HELOC interest cost outweighs the benefit. Direct extra payments would serve you better."},
+    no_equity:     {label:"INSUFFICIENT EQUITY",  color:C.textDim,bg:"#111",      icon:"—",
+      sub:"Not enough home equity for a HELOC at this LTV. Adjust home value or LTV limit to explore."}
   }[verdict];
 
 
@@ -871,21 +1063,42 @@ function App(){
               };
               const TI=({label,mode,setMode,monthly,setMonthly,annual,setAnnual,tip})=>(
                 <div style={{marginBottom:14}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:7}}>
-                    <span style={{fontSize:12,color:C.textMid,display:"flex",alignItems:"center",gap:4}}>{label}<InfoTip text={tip}/></span>
-                    <div style={{display:"flex",background:C.bg,border:`1px solid ${C.border}`,borderRadius:5,overflow:"hidden"}}>
-                      {[["monthly","Monthly"],["annual","Annual"],["escrow","In escrow"]].map(([v,l])=>(
-                        <button key={v} onClick={()=>setMode(v)} style={{padding:"3px 9px",background:mode===v?C.accent:"transparent",color:mode===v?C.bg:C.textDim,border:"none",cursor:"pointer",fontFamily:"monospace",fontSize:10,fontWeight:mode===v?700:400}}>{l}</button>
-                      ))}
-                    </div>
+                  <Label tip={tip}>{label}</Label>
+                  {/* Mode selector — full width, hard to miss */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}>
+                    {[
+                      {v:"monthly", l:"Monthly",  icon:"📅", hint:"per month"},
+                      {v:"annual",  l:"Annual",   icon:"📆", hint:"per year"},
+                      {v:"escrow",  l:"In Escrow",icon:"✓",  hint:"in mortgage pmt"},
+                    ].map(({v,l,icon,hint})=>(
+                      <button key={v} onClick={()=>setMode(v)} style={{
+                        padding:"8px 6px",borderRadius:7,cursor:"pointer",textAlign:"center",
+                        border:`2px solid ${mode===v?C.accent:C.border}`,
+                        background:mode===v?C.accent+"18":C.bg,
+                        transition:"all 0.15s"
+                      }}>
+                        <div style={{fontSize:14,marginBottom:2}}>{icon}</div>
+                        <div style={{fontSize:11,fontWeight:700,fontFamily:"monospace",color:mode===v?C.accent:C.textMid}}>{l}</div>
+                        <div style={{fontSize:9,color:mode===v?C.accent:C.textDim,fontFamily:"monospace"}}>{hint}</div>
+                      </button>
+                    ))}
                   </div>
                   {mode!=="escrow"&&(
                     <div>
-                        <DollarInput value={mode==="annual"?annual:monthly} onChange={n=>{mode==="annual"?setAnnual(n):setMonthly(n);}} suffix={mode==="annual"?"/yr":"/mo"}/>
-                      {mode==="annual"&&<div style={{fontSize:10,color:C.textDim,marginTop:4}}>= {fmt(annual/12)}/mo</div>}
+                      <div style={{position:"relative"}}>
+                        <DollarInput value={mode==="annual"?annual:monthly} onChange={n=>{mode==="annual"?setAnnual(n):setMonthly(n);}} suffix={mode==="annual"?"/ year":"/ month"}/>
+                      </div>
+                      {mode==="annual"
+                        ?<div style={{fontSize:11,color:C.accent,marginTop:5,fontFamily:"monospace",display:"flex",alignItems:"center",gap:4}}>
+                           <span>📅</span> = {fmt(annual/12)}/mo used in calculation
+                         </div>
+                        :<div style={{fontSize:11,color:C.textDim,marginTop:5,fontFamily:"monospace"}}>
+                           📅 monthly amount used in calculation
+                         </div>
+                      }
                     </div>
                   )}
-                  {mode==="escrow"&&<div style={{fontSize:11,color:C.textDim,lineHeight:1.5}}>Already included in your total mortgage payment above — no separate entry needed.</div>}
+                  {mode==="escrow"&&<div style={{fontSize:11,color:C.textDim,lineHeight:1.6,background:C.bg,borderRadius:6,padding:"8px 10px"}}>✓ Already included in your total mortgage payment above — no separate entry needed.</div>}
                 </div>
               );
 
@@ -1148,6 +1361,13 @@ function App(){
             {/* SURPLUS SUMMARY */}
             {(()=>{
               const ready=mortgageBal>0&&monthlyIncome>0&&surplus>0&&result;
+              const missing=[];
+              if(mortgageBal<=0) missing.push("mortgage balance");
+              if(mortgageRate<=0) missing.push("mortgage rate");
+              if(homeValue<=0) missing.push("home value");
+              if(monthlyIncome<=0) missing.push("monthly income");
+              if(isRentalA&&rentalHomeValue<=0) missing.push("rental property value");
+              if(isRentalB&&rentalMortgageBal<=0) missing.push("rental mortgage balance");
               return(
               <div style={{background:surplus>0?C.greenDim:C.redDim,border:`1px solid ${surplus>0?C.green+"44":C.red+"44"}`,borderRadius:12,padding:18}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
@@ -1177,7 +1397,7 @@ function App(){
                     boxShadow:ready?"0 0 18px rgba(0,200,83,0.35)":"none",
                     opacity:ready?1:0.5
                   }}
-                >{ready?"📊 See Results →":"Fill in your numbers above first"}</button>
+                >{ready?"📊 See Results →":missing.length>0?`Missing: ${missing.join(", ")} ↑`:"Fill in your numbers above first"}</button>
               </div>
               );
             })()}
@@ -1188,9 +1408,27 @@ function App(){
 
         {/* ── RESULTS TAB ── */}
         {activeSection==="results"&&<div className="fade-in">
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:useRentalHeloc?8:16}}>
+          {/* Print-only header — hidden on screen */}
+          {result&&<div style={{display:"none"}} className="print-header">
+            <div style={{borderBottom:"2px solid #111",paddingBottom:12,marginBottom:16}}>
+              <div style={{fontSize:20,fontWeight:700}}>Velocity Banking Analysis</div>
+              <div style={{fontSize:12,color:"#444",marginTop:4}}>
+                {fmt(params.mortgageBal)} mortgage @ {params.mortgageRate}% · {mo(remainingYears*12)} remaining
+                {useRentalHeloc?" · Rental HELOC strategy":""}
+              </div>
+            </div>
+          </div>}
+          <div className="no-print" style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:useRentalHeloc?8:16}}>
             <button onClick={()=>setActiveSection("calculator")} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:7,padding:"9px 18px",cursor:"pointer",fontFamily:"monospace",fontSize:13,color:C.textMid,letterSpacing:"0.05em",display:"flex",alignItems:"center",gap:6}}><span>←</span> Edit Numbers</button>
-            <div style={{fontSize:13,color:C.textDim,fontFamily:"monospace"}}>Adjust the <span style={{color:C.accent,cursor:"pointer",textDecoration:"underline"}} onClick={()=>setActiveSection("calculator")}>calculator</span> and come back any time</div>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <button onClick={()=>window.print()} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:7,padding:"9px 14px",cursor:"pointer",fontFamily:"monospace",fontSize:12,color:C.textMid,display:"flex",alignItems:"center",gap:6}}>🖨 Print / Save PDF</button>
+              <button onClick={()=>{
+                if(!result) return;
+                const text=`Velocity Banking Analysis\nMortgage: ${fmt(params.mortgageBal)} @ ${params.mortgageRate}%\nPayoff: ${mo(result.months)} vs ${mo(result.baseline.months)} standard\nInterest Saved: ${fmt(result.interestSavedVsBaseline)} vs doing nothing\nVs Direct Payments: ${result.extraCostVsDirect>0?"+":""}${fmt(result.extraCostVsDirect)}\nCalculator: ${window.location.href}`;
+                if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>alert("Summary copied to clipboard!"));}
+                else{prompt("Copy this summary:",text);}
+              }} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:7,padding:"9px 14px",cursor:"pointer",fontFamily:"monospace",fontSize:12,color:C.textMid,display:"flex",alignItems:"center",gap:6}}>📋 Copy Summary</button>
+            </div>
           </div>
           {useRentalHeloc&&<div style={{background:rentalDirection==="heloc_on_rental"?C.amber+"11":C.accent+"11",border:`1px solid ${rentalDirection==="heloc_on_rental"?C.amber:C.accent}44`,borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
             <span style={{fontSize:22,flexShrink:0}}>{rentalDirection==="heloc_on_rental"?"🏘→🏠":"🏠→🏘"}</span>
@@ -1207,6 +1445,20 @@ function App(){
               }
             </div>
           </div>}
+          {/* ── DRAW PERIOD WARNING ── */}
+          {result&&result.months>120&&<div style={{background:"#7c3aed11",border:"1px solid #7c3aed55",borderRadius:10,padding:"12px 18px",marginBottom:16,display:"flex",alignItems:"flex-start",gap:12}}>
+            <span style={{fontSize:22,flexShrink:0}}>⏳</span>
+            <div>
+              <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",fontFamily:"monospace",marginBottom:3}}>HELOC DRAW PERIOD — VERIFY WITH YOUR LENDER</div>
+              <div style={{fontSize:12,color:C.textDim,lineHeight:1.6}}>
+                This scenario projects a <strong style={{color:C.text}}>{mo(result.months)} payoff</strong> — longer than the typical 10-year HELOC draw period.
+                After year 10, most HELOCs enter a <strong style={{color:C.text}}>repayment phase</strong> where you can no longer draw new funds.
+                If that happens mid-strategy, you'd need to switch to direct extra payments for the remainder.
+                Ask your lender specifically about draw period length and whether it can be extended. Some credit unions offer 15-year draw periods.
+              </div>
+            </div>
+          </div>}
+
           {/* ── TOP ROW: Verdict + Strategy Settings side by side ── */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16,alignItems:"start"}}>
             {/* Verdict — BIG signal light */}
@@ -1217,18 +1469,41 @@ function App(){
                 <div style={{flex:1}}>
                   <div style={{fontSize:10,color:vc.color,fontFamily:"monospace",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:4}}>// Velocity Banking Analysis</div>
                   <div style={{fontSize:22,fontWeight:800,color:vc.color,marginBottom:6,letterSpacing:"-0.01em"}}>{vc.label}</div>
-                  <div style={{fontSize:14,color:C.textMid,lineHeight:1.65,marginBottom:result?12:0}}>{vc.sub}</div>
+                  <div style={{fontSize:14,color:C.textMid,lineHeight:1.65,marginBottom:result?8:0}}>{vc.sub}</div>
+                  {result&&(()=>{
+                    const spread=(params.helocRate-params.mortgageRate).toFixed(2);
+                    const spreadNum=params.helocRate-params.mortgageRate;
+                    if(spreadNum<1) return null; // negligible spread, no note needed
+                    const spreadColor=spreadNum>4?C.amber:C.textDim;
+                    return<div style={{fontSize:11,color:spreadColor,marginBottom:12,fontFamily:"monospace",lineHeight:1.5}}>
+                      Rate spread: {params.mortgageRate}% mortgage → {params.helocRate.toFixed(2)}% HELOC (+{spread}%).
+                      {spreadNum>4?" Higher spread means more HELOC interest cost — consider a lower chunk size.":" Manageable spread."}
+                    </div>;
+                  })()}
                   {result&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                    {/* Card 1: always show interest saved vs baseline */}
                     <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 14px"}}>
-                      <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Interest Eliminated</div>
+                      <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Saved vs Doing Nothing</div>
                       <div style={{fontSize:20,fontFamily:"monospace",fontWeight:800,color:C.green}}>{fmt(result.interestSavedVsBaseline)}</div>
                       <div style={{fontSize:11,color:C.textDim,marginTop:2}}>vs standard amortization</div>
                     </div>
-                    <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 14px"}}>
-                      <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Years Cut</div>
-                      <div style={{fontSize:20,fontFamily:"monospace",fontWeight:800,color:vc.color}}>{result.baseline.months>result.months?mo(result.baseline.months-result.months):"0y 0mo"}</div>
-                      <div style={{fontSize:11,color:C.textDim,marginTop:2}}>{mo(result.months)} vs {mo(result.baseline.months)}</div>
-                    </div>
+                    {/* Card 2: context-aware — show the most relevant comparison */}
+                    {(verdict==="consider_direct"||verdict==="yes_liquidity")
+                      ?<div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 14px"}}>
+                         <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Cost vs Direct Payments</div>
+                         <div style={{fontSize:20,fontFamily:"monospace",fontWeight:800,color:result.extraCostVsDirect>0?C.amber:C.green}}>
+                           {result.extraCostVsDirect>0?"+":""}{fmt(result.extraCostVsDirect)}
+                         </div>
+                         <div style={{fontSize:11,color:C.textDim,marginTop:2}}>
+                           {result.extraCostVsDirect>0?"liquidity premium vs direct":"VB cheaper than direct"}
+                         </div>
+                       </div>
+                      :<div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 14px"}}>
+                         <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Years Cut</div>
+                         <div style={{fontSize:20,fontFamily:"monospace",fontWeight:800,color:vc.color}}>{result.baseline.months>result.months?mo(result.baseline.months-result.months):"0y 0mo"}</div>
+                         <div style={{fontSize:11,color:C.textDim,marginTop:2}}>{mo(result.months)} vs {mo(result.baseline.months)}</div>
+                       </div>
+                    }
                   </div>}
                 </div>
               </div>
