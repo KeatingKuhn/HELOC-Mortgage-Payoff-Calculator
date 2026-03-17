@@ -31,9 +31,9 @@
   .accordion-body.open{max-height:2000px;opacity:1;}
   .accordion-body.closed{max-height:0;opacity:0;}
   @media print{
-    @page{margin:1.5cm 1.5cm 1.5cm 1.5cm;size:A4 portrait;}
+    @page{margin:1.8cm 1.5cm 1.8cm 1.5cm;size:A4 portrait;}
 
-    /* Reset all backgrounds and text to print-friendly */
+    /* ── BACKGROUNDS & COLORS ── */
     *{
       background:#fff!important;
       color:#111!important;
@@ -44,43 +44,46 @@
       print-color-adjust:exact;
     }
 
-    /* Show print-only header */
-    .print-header{display:block!important;}
+    /* ── CRITICAL: FIX CLIPPING ──
+       overflow:hidden on divs clips content at page breaks.
+       Must be visible so content flows across pages. */
+    *{overflow:visible!important;}
 
-    /* Hide everything except results content */
+    /* ── LAYOUT: FIT PAPER WIDTH ── */
+    html,body,#root{width:100%!important;max-width:100%!important;}
+
+    /* Convert side-by-side grids to stacked for paper */
+    div[style*="grid-template-columns"]{
+      display:block!important;
+    }
+
+    /* ── SHOW/HIDE ── */
+    .print-header{display:block!important;}
     .no-print{display:none!important;}
     nav,header{display:none!important;}
     .tooltip .tip{display:none!important;}
-
-    /* Keep chart line colors — SVG stroke colors are separate from CSS color */
-    svg line,svg path{stroke-color:inherit;}
-
-    /* Keep accent colors on key numbers */
-    .print-accent{color:#0077aa!important;}
-
-    /* Table print improvements */
-    table{border-collapse:collapse!important;width:100%!important;}
-    th,td{border:1px solid #ccc!important;padding:6px 10px!important;font-size:11px!important;}
-    thead{display:table-header-group;}
-    tr{page-break-inside:avoid;}
-
-    /* Card grid — prevent awkward splits */
-    .print-card{page-break-inside:avoid;border:1px solid #ccc!important;}
-
-    /* Page breaks */
-    .print-break-before{page-break-before:always;}
-
-    /* Accordion closed sections stay hidden in print */
     .accordion-body.closed{display:none!important;}
-
-    /* Reduce font sizes slightly for paper */
-    body{font-size:11px!important;}
-
-    /* Chart text — force dark */
-    text{fill:#111!important;}
-
-    /* Hide tab switcher and interactive elements */
     button:not(.print-keep){display:none!important;}
+    .fade-in{animation:none!important;}
+
+    /* ── SVG CHART ── */
+    svg{max-width:100%!important;height:auto!important;}
+    text{fill:#111!important;}
+    /* stroke colors preserved — not overridden by * color rule */
+
+    /* ── TABLE ── */
+    table{border-collapse:collapse!important;width:100%!important;font-size:10px!important;}
+    th,td{border:1px solid #bbb!important;padding:4px 8px!important;font-size:10px!important;}
+    thead{display:table-header-group!important;}
+    tr{page-break-inside:avoid!important;}
+    .print-table-wrapper{overflow:visible!important;}
+
+    /* ── PAGE BREAK CONTROL ── */
+    h1,h2,h3{page-break-after:avoid;}
+    tr,div[style*="marginBottom"]{page-break-inside:avoid;}
+
+    /* ── FONT SIZE ── */
+    body{font-size:11px!important;line-height:1.4!important;}
   }
   .checklist-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #1e2d45;}
   .checklist-item:last-child{border-bottom:none;}
@@ -108,7 +111,7 @@ const FAQS=[
   {q:"Am I paying more money short-term with this strategy?",a:"Yes — slightly, and it's worth understanding why. In the first few months, you have both a mortgage payment AND HELOC interest to cover. The HELOC interest is real money going out. However, two things are happening simultaneously: (1) your mortgage principal is dropping faster than it ever would on a standard schedule, and (2) your HELOC balance is falling every month as your income flows through it. The total extra cost in Year 1 is typically a few hundred to a couple thousand dollars in HELOC interest. That's the 'price of admission' for eliminating tens or hundreds of thousands in future mortgage interest. Think of it as a small upfront cost to break out of the amortization trap. The break-even timeline in the Risk tab shows exactly when your cumulative savings overtake that early HELOC cost."},
   {q:"Am I using more of my income with velocity banking than I would be otherwise?",a:"No — this is one of the most important things to understand. The strategy does NOT require you to contribute more money than you're already spending. Your income stays the same. Your expenses stay the same. What changes is the routing: instead of income landing in a checking account where it earns nothing while your HELOC charges interest, income is deposited directly into the HELOC to reduce the balance daily. The HELOC pays your bills and mortgage payment on your behalf. Your monthly cash outflow is identical — but every dollar now spends time reducing interest before it leaves. The only discipline required is not drawing additional HELOC funds for discretionary spending."},
   {q:"Is the whole point just to shorten the loan and save interest — or is there more to it?",a:"Shortening the mortgage and saving interest is the primary outcome, but there are three additional benefits most people don't initially appreciate. First, liquidity: every dollar of equity you've built through chunking is still accessible via the HELOC — unlike extra payments directly to a mortgage, which are locked until you sell or refinance. Second, compounding savings: each chunk eliminates principal that would have generated interest for years. That eliminated principal never gets the chance to compound against you. Third, financial flexibility: once the mortgage is gone, the HELOC remains open as a powerful financial tool — a large, secured credit line for investment opportunities, emergencies, or your next property. The mortgage payoff is the destination. The HELOC is a permanent upgrade to your financial infrastructure."},
-  {q:"How does velocity banking compare to just making extra principal payments every month?",a:"They often reach similar payoff timelines — but with a critical difference: liquidity. With direct extra payments, every surplus dollar you send to the mortgage is locked in equity. If you lose your job, face a medical emergency, or find an investment opportunity, that money is inaccessible without a refinance. With velocity banking, your surplus flows through the HELOC, which remains open. The money is working against your debt AND remains accessible simultaneously. The total interest cost of velocity banking is typically slightly higher than direct extra payments (HELOC interest adds a small premium) but most people find the liquidity worth far more than the difference. Run the calculator — the 'vs Locking Cash Away' card in the Results tab shows you exactly what that liquidity premium costs in your specific scenario."},
+  {q:"How does velocity banking compare to just making extra principal payments every month?",a:"They often reach similar payoff timelines — but the comparison is more nuanced than it's usually presented.\n\nDirect extra payments are the cheapest path on total interest. Every surplus dollar goes straight to principal with no HELOC rate spread eating into the savings.\n\nThe standard objection is liquidity: extra principal payments are locked in equity until you sell or refinance. But there's a hybrid approach that most courses don't mention — open a HELOC, leave it at $0, and make direct extra payments. The HELOC sits as a backstop at near-zero cost (maybe $0–$75/yr annual fee at a credit union). If you lose your job or face an emergency, you draw from the HELOC. You get the cheapest payoff path AND full liquidity access without paying the rate spread every month.\n\nVelocity banking (actively routing income through the HELOC) makes the most sense when: your mortgage rate is higher (5%+), your surplus is moderate, or you specifically want the discipline of the paycheck parking system. At low mortgage rates with a strong surplus, direct payments + zero-balance HELOC backstop is often the optimal combination.\n\nRun the calculator — the Comparison tab shows the exact dollar difference between the three strategies for your specific situation."},
   {q:"What is the difference between the mortgage balance and total debt shown in the chart?",a:"The chart shows total remaining debt — mortgage balance plus any outstanding HELOC balance — at the end of each year. For the standard amortization line, total debt is just the mortgage balance declining slowly over time. For velocity banking, total debt includes both: immediately after a chunk, debt may temporarily show as mortgage + HELOC. But as the HELOC pays down from income over the following months, total debt drops faster than the mortgage alone ever would. For direct extra payments, total debt starts lower (savings are applied immediately) and declines steadily. All three lines eventually reach $0 — the velocity banking and direct lines just get there dramatically earlier."},
   {q:"How do I actually pay the interest on my HELOC each month?",a:"HELOC interest is charged daily and billed monthly. Here's exactly how it works in the velocity banking setup:\n\nEach day, your lender calculates: (Outstanding Balance × Annual Rate) ÷ 365 = that day's interest charge. These daily charges accumulate and are billed to you at the end of the statement period.\n\nIn practice, you don't write a separate check for HELOC interest. The interest charge is simply added to your HELOC balance each month. When you deposit your paycheck into the HELOC, that deposit simultaneously pays down both the principal and any accrued interest — because the HELOC works like a running account balance, not a fixed loan with a payment schedule.\n\nExample: $20,000 HELOC balance at 8.5% rate. Daily interest = ($20,000 × 0.085) ÷ 365 = $4.66/day. After 30 days = ~$140 added to your balance. When your $5,000 paycheck deposits on day 1 of next month, your balance drops from $20,140 to $15,140. The interest was paid implicitly — you never write a check for it.\n\nThis is why paycheck parking works: the sooner income hits the HELOC, the fewer days that balance sits high, and the less interest accumulates."},
   {q:"What is a HELOC draw period and repayment period — and how does it affect this strategy?",a:"A HELOC has two phases:\n\nDraw period (typically 10 years): You can borrow and repay freely. Interest accrues only on what you owe. Most lenders require interest-only minimum payments during this phase — but you can always pay more. This is the phase you use for velocity banking.\n\nRepayment period (typically 10-20 years): The line closes, you can no longer draw, and the outstanding balance converts to a fixed repayment schedule — similar to a mortgage. Minimum payments increase substantially.\n\nFor velocity banking: if your payoff timeline is under 7 years (which it typically is with strong cash flow), you'll complete the strategy entirely within the draw period and never enter repayment. However, if your surplus is low and the calculator projects 12+ years, you need to confirm your draw period length with your lender. Some lenders offer 5-year draw periods — avoid these for this strategy. Ask for at least 10 years.\n\nThe interest-only minimum during the draw period is a safety net: even in a difficult month, your minimum HELOC obligation is just the accrued interest — often under $200 — not a full amortized payment."},
@@ -1536,7 +1539,7 @@ function App(){
                   {[
                     {label:"Standard Amortization",sub:"Pay minimum — follow the schedule",total:result.baseline.totalInt,pct:100,color:C.red,note:`Over ${mo(result.baseline.months)} you pay ${fmt(result.baseline.totalInt)} in interest alone — in addition to paying back every dollar you borrowed.`},
                     {label:`Velocity Banking (${Math.round(redrawPct*100)}% chunk)`,sub:"This strategy",total:result.total,pct:result.baseline.totalInt>0?Math.round(result.total/result.baseline.totalInt*100):0,color:C.accent,note:`Total interest + HELOC fees. Paid off in ${mo(result.months)}. You keep ${fmt(result.interestSavedVsBaseline)} that would have gone to the bank.`},
-                    {label:"Direct Extra Payments",sub:"Lock surplus into equity",total:result.direct.totalInt,pct:result.baseline.totalInt>0?Math.round(result.direct.totalInt/result.baseline.totalInt*100):0,color:C.amber,note:`Lowest total interest — but all surplus cash is locked in equity. No liquidity. Paid off in ${mo(result.direct.months)}.`},
+                    {label:"Direct Extra Payments",sub:"Lock surplus into equity",total:result.direct.totalInt,pct:result.baseline.totalInt>0?Math.round(result.direct.totalInt/result.baseline.totalInt*100):0,color:C.amber,note:`Lowest total interest. Surplus goes straight to principal — no HELOC interest cost. Paid off in ${mo(result.direct.months)}. Note: you can open a HELOC separately as a zero-balance backstop without affecting this math.`},
                   ].map((s,i)=>(
                     <div key={s.label} style={{padding:"14px 18px",borderRight:i<2?`1px solid ${C.border}`:"none"}}>
                       <div style={{fontSize:11,color:s.color,fontFamily:"monospace",fontWeight:700,marginBottom:3}}>{s.label}</div>
@@ -1662,7 +1665,7 @@ function App(){
                     {[
                       {color:"#ff4d6d",dash:"8,5",label:"Standard Amortization",payoff:mo(result.baseline.months),interest:fmt(result.baseline.totalInt),note:"Minimum required payments only"},
                       {color:"#00d4ff",dash:"",label:"Velocity Banking",payoff:mo(result.months),interest:fmt(result.total),note:`${result.cycleCount} chunk${result.cycleCount!==1?"s":""} · HELOC cost: ${fmt(result.totalHInt)}`},
-                      {color:"#ffb700",dash:"4,3",label:"Direct Extra Payments",payoff:mo(result.direct.months),interest:fmt(result.direct.totalInt),note:`+${fmt(extra2)}/mo extra · equity locked`},
+                      {color:"#ffb700",dash:"4,3",label:"Direct Extra Payments",payoff:mo(result.direct.months),interest:fmt(result.direct.totalInt),note:`+${fmt(extra2)}/mo extra · equity locked (a zero-balance HELOC as backstop doesn't change this cost)`},
                     ].map(({color,dash,label,payoff,interest,note})=>(
                       <div key={label} style={{background:C.bg,borderRadius:8,padding:"12px 14px",borderTop:`2px solid ${color}`,border:`1px solid ${color}33`,borderTopColor:color}}>
                         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
@@ -1711,7 +1714,7 @@ function App(){
 
                 {/* Year-by-Year */}
               <div style={{display:tab==="year-by-year"?"block":"none",background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,overflow:"hidden"}}>
-                <div style={{overflowX:"auto"}}>
+                <div className="print-table-wrapper" style={{overflowX:"auto"}}>
                   <table style={{minWidth:780}}>
                     <thead>
                       <tr style={{background:C.bg}}>
@@ -1783,7 +1786,7 @@ function App(){
                   {[
                     {label:`Standard Amortization — No Extra Payments`,payoff:mo(result.baseline.months),mInt:result.baseline.totalInt,hInt:0,total:result.baseline.totalInt,liquidity:"Full liquidity — no equity locked up beyond normal amortization",color:C.textMid,note:"Default path — every payment follows the front-loaded amortization schedule.",highlight:false},
                     {label:`Velocity Banking — ${result.cycleCount} cycle${result.cycleCount!==1?'s':''}`,payoff:mo(result.months),mInt:result.totalMInt,hInt:result.totalHInt,total:result.total,liquidity:`${fmt(result.ltvCeiling)} line accessible`,color:C.accent,note:"Early payoff + savings + liquidity.",highlight:true},
-                    {label:"Direct Extra Payments",payoff:mo(result.direct.months),mInt:result.direct.totalInt,hInt:0,total:result.direct.totalInt,liquidity:"$0 liquid — locked in equity",color:C.amber,note:"Lowest interest, no liquidity.",highlight:false},
+                    {label:"Direct Extra Payments",payoff:mo(result.direct.months),mInt:result.direct.totalInt,hInt:0,total:result.direct.totalInt,liquidity:"Equity locked — but a zero-balance HELOC opened separately gives full backstop at near-zero cost",color:C.amber,note:"Lowest interest. Open a separate zero-balance HELOC as backstop — costs nothing if unused.",highlight:false},
                   ].map((s,i)=>(
                     <div key={i} style={{padding:"14px 16px",borderBottom:i<2?`1px solid ${C.border}`:"none",background:s.highlight?C.accentGlow:"transparent",borderLeft:`3px solid ${s.highlight?C.accent:"transparent"}`}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8,gap:6}}>
