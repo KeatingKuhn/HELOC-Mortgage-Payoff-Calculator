@@ -1208,11 +1208,11 @@ function App(){
   })();
   const vc={
     strongly_yes:  {label:"HIGHLY RECOMMENDED",  color:C.green,  bg:C.greenDim,  icon:"⚡",
-      sub:"Velocity banking is the right move. Strong interest savings and your money stays fully accessible throughout."},
+      sub:"Strong scenario — meaningful savings vs doing nothing. Direct payments would save slightly more on total interest but lock your equity. Check the Comparison tab for the exact delta."},
     yes:           {label:"RECOMMENDED",          color:C.green,  bg:C.greenDim,  icon:"✓",
-      sub:"Good candidate. Meaningful savings vs standard amortization with liquidity maintained. The small premium over direct payments buys you full access to your equity."},
+      sub:"Good candidate. Saves meaningfully vs doing nothing — but direct payments cost less overall. The difference is your equity stays fully liquid with VB. Check Comparison tab for the exact dollar delta."},
     yes_liquidity: {label:"WORKS — CHECK THE TRADE-OFF", color:C.green, bg:C.greenDim, icon:"◈",
-      sub:"VB saves meaningfully vs doing nothing, but direct extra payments would cost less overall. The difference is your money stays accessible in the HELOC. See the Comparison tab."},
+      sub:"Saves meaningfully vs doing nothing, but direct payments cost less overall. Tradeoff: direct locks your equity; VB keeps it accessible. See Comparison tab for exact delta."},
     maybe:         {label:"MARGINAL BENEFIT",     color:C.amber,  bg:C.amberDim,  icon:"~",
       sub:"Some benefit vs standard amortization, but modest. Worth it if liquidity matters more than minimizing total interest paid."},
     consider_direct:{label:"CONSIDER DIRECT PAYMENTS", color:C.amber, bg:C.amberDim, icon:"⚠",
@@ -1913,6 +1913,13 @@ function App(){
                   <div style={{fontSize:10,color:vc.color,fontFamily:"monospace",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:4}}>// Velocity Banking Analysis</div>
                   <div style={{fontSize:22,fontWeight:800,color:vc.color,marginBottom:6,letterSpacing:"-0.01em"}}>{vc.label}</div>
                   <div style={{fontSize:14,color:C.textMid,lineHeight:1.65,marginBottom:result?8:0}}>{vc.sub}</div>
+                  {/* Dynamic delta vs direct — always shown */}
+                  {result&&result.extraCostVsDirect>0&&<div style={{fontSize:12,color:C.amber,marginTop:8,lineHeight:1.5,fontFamily:"monospace"}}>
+                    ⚠ Direct payments would cost <strong style={{color:C.text}}>{fmt(result.extraCostVsDirect)}</strong> less in total interest — but lock your equity until you sell or refi. The Comparison tab shows the full breakdown.
+                  </div>}
+                  {result&&result.extraCostVsDirect<=0&&<div style={{fontSize:12,color:C.green,marginTop:8,lineHeight:1.5,fontFamily:"monospace"}}>
+                    ✓ VB costs less than direct payments <em>and</em> keeps your equity accessible — wins on all fronts.
+                  </div>}
                   {result&&(()=>{
                     const spread=(params.helocRate-params.mortgageRate).toFixed(2);
                     const spreadNum=params.helocRate-params.mortgageRate;
