@@ -1261,13 +1261,13 @@ function App(){
     <div style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'DM Sans',Georgia,sans-serif",paddingBottom:80}}>
 
       {/* HERO */}
-      <div className="grid-texture" style={{background:"linear-gradient(160deg,#050810 0%,#0a1220 45%,#060d18 100%)",borderBottom:`1px solid ${C.border}`,padding:"56px 28px 52px",position:"relative",overflow:"hidden"}}>
+      <div className="grid-texture" style={{background:"linear-gradient(160deg,#050810 0%,#0a1220 45%,#060d18 100%)",borderBottom:`1px solid ${C.border}`,padding:"44px 28px 40px",position:"relative",overflow:"hidden"}}>
         {/* Atmospheric glows */}
         <div className="hero-glow" style={{top:-120,right:-80,width:520,height:520,background:"radial-gradient(circle,rgba(0,212,255,0.09),transparent 65%)"}}/>
         <div className="hero-glow" style={{bottom:-80,left:60,width:360,height:360,background:"radial-gradient(circle,rgba(0,229,160,0.06),transparent 65%)"}}/>
         <div className="hero-glow" style={{top:"40%",left:"40%",width:600,height:300,background:"radial-gradient(ellipse,rgba(0,150,255,0.04),transparent 70%)"}}/>
 
-        <div style={{maxWidth:1200,margin:"0 auto",position:"relative"}}>
+        <div style={{maxWidth:1400,margin:"0 auto",position:"relative"}}>
 
           {/* Eyebrow */}
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
@@ -1276,24 +1276,22 @@ function App(){
           </div>
 
           {/* Main headline */}
-          <h1 className="hero-title" style={{fontSize:"clamp(36px,5vw,60px)",color:C.text,marginBottom:16,maxWidth:760}}>
-            Pay off your mortgage in{" "}
-            <span style={{color:C.accent,fontStyle:"italic"}}>5–7 years</span>
-            <br/>on your current income
+          <h1 className="hero-title" style={{fontSize:"clamp(32px,3.8vw,54px)",color:C.text,marginBottom:14}}>
+            Pay off your mortgage in <span style={{color:C.accent,fontStyle:"italic"}}>5–7 years</span> on your current income
           </h1>
-          <p className="hero-subtitle" style={{fontSize:18,color:C.textMid,marginBottom:40,maxWidth:580,lineHeight:1.65}}>
+          <p className="hero-subtitle" style={{fontSize:17,color:C.textMid,marginBottom:32,maxWidth:680,lineHeight:1.6}}>
             Model the HELOC velocity banking strategy on your real numbers — see exactly how much interest you save and how many years disappear.
           </p>
 
           {/* Feature pills */}
-          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:36}}>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:28}}>
             {[["$100k–$200k saved in interest",C.green],["Full liquidity throughout",C.accent],["Same income, different routing",C.amber]].map(([t,col])=>(
               <span key={t} className="feature-pill" style={{color:col,borderColor:col+"44",background:col+"0d"}}><span>✓</span>{t}</span>
             ))}
           </div>
 
           {/* Three-card strip */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:32}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:24}}>
             {[
               {icon:"😤",label:"The Problem",color:C.red,lines:["Banks front-load your mortgage with interest. In the first 5 years of a $300k loan, 78% of every payment goes to interest — not principal.","The 30-year mortgage was engineered to separate you from your cash."]},
               {icon:"💡",label:"The Strategy",color:C.accent,lines:["Draw a lump sum from your HELOC onto your mortgage principal — called chunking. Deposit every paycheck into the HELOC to reduce daily interest.","Each cycle eliminates years of front-loaded interest."]},
