@@ -1902,8 +1902,8 @@ function App(){
             );
           })()}
 
-          {/* ── TOP ROW: Verdict + Strategy Settings side by side ── */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16,alignItems:"start"}}>
+          {/* ── VERDICT BOX ── */}
+          <div style={{marginBottom:16}}>
             {/* Verdict — BIG signal light */}
             <div style={{background:`linear-gradient(135deg,${vc.color}18,${vc.color}08)`,border:`2px solid ${vc.color}66`,borderRadius:12,padding:"22px 24px",position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",top:-30,right:-30,width:140,height:140,borderRadius:"50%",background:vc.color+"12",pointerEvents:"none"}}/>
@@ -1914,12 +1914,7 @@ function App(){
                   <div style={{fontSize:22,fontWeight:800,color:vc.color,marginBottom:6,letterSpacing:"-0.01em"}}>{vc.label}</div>
                   <div style={{fontSize:14,color:C.textMid,lineHeight:1.65,marginBottom:result?8:0}}>{vc.sub}</div>
                   {/* Dynamic delta vs direct — always shown */}
-                  {result&&result.extraCostVsDirect>0&&<div style={{fontSize:12,color:C.amber,marginTop:8,lineHeight:1.5,fontFamily:"monospace"}}>
-                    ⚠ Direct payments would cost <strong style={{color:C.text}}>{fmt(result.extraCostVsDirect)}</strong> less in total interest — but lock your equity until you sell or refi. The Comparison tab shows the full breakdown.
-                  </div>}
-                  {result&&result.extraCostVsDirect<=0&&<div style={{fontSize:12,color:C.green,marginTop:8,lineHeight:1.5,fontFamily:"monospace"}}>
-                    ✓ VB costs less than direct payments <em>and</em> keeps your equity accessible — wins on all fronts.
-                  </div>}
+
                   {result&&(()=>{
                     const spread=(params.helocRate-params.mortgageRate).toFixed(2);
                     const spreadNum=params.helocRate-params.mortgageRate;
@@ -1930,34 +1925,34 @@ function App(){
                       {spreadNum>4?" Higher spread means more HELOC interest cost — consider a lower chunk size.":" Manageable spread."}
                     </div>;
                   })()}
-                  {result&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                  {result&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
                     {/* Card 1: always show interest saved vs baseline */}
-                    <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 14px"}}>
+                    <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"8px 10px"}}>
                       <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Saved vs Doing Nothing</div>
-                      <div style={{fontSize:20,fontFamily:"monospace",fontWeight:800,color:C.green}}>{fmt(result.interestSavedVsBaseline)}</div>
+                      <div style={{fontSize:17,fontFamily:"monospace",fontWeight:800,color:C.green}}>{fmt(result.interestSavedVsBaseline)}</div>
                       <div style={{fontSize:11,color:C.textDim,marginTop:2}}>vs standard amortization</div>
                     </div>
                     {/* Card 2: context-aware — show the most relevant comparison */}
                     {(verdict==="consider_direct"||verdict==="yes_liquidity")
-                      ?<div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 14px"}}>
+                      ?<div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"8px 10px"}}>
                          <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Cost vs Direct Payments</div>
-                         <div style={{fontSize:20,fontFamily:"monospace",fontWeight:800,color:result.extraCostVsDirect>0?C.amber:C.green}}>
+                         <div style={{fontSize:17,fontFamily:"monospace",fontWeight:800,color:result.extraCostVsDirect>0?C.amber:C.green}}>
                            {result.extraCostVsDirect>0?"+":""}{fmt(result.extraCostVsDirect)}
                          </div>
                          <div style={{fontSize:11,color:C.textDim,marginTop:2}}>
                            {result.extraCostVsDirect>0?"liquidity premium vs direct":"VB cheaper than direct"}
                          </div>
                        </div>
-                      :<div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 14px"}}>
+                      :<div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"8px 10px"}}>
                          <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Years Cut</div>
-                         <div style={{fontSize:20,fontFamily:"monospace",fontWeight:800,color:vc.color}}>{result.baseline.months>result.months?mo(result.baseline.months-result.months):"0y 0mo"}</div>
+                         <div style={{fontSize:17,fontFamily:"monospace",fontWeight:800,color:vc.color}}>{result.baseline.months>result.months?mo(result.baseline.months-result.months):"0y 0mo"}</div>
                          <div style={{fontSize:11,color:C.textDim,marginTop:2}}>{mo(result.months)} vs {mo(result.baseline.months)}</div>
                        </div>
                     }
                     {/* Card 3: cost vs direct payments */}
-                    <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 14px"}}>
+                    <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"8px 10px"}}>
                       <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>vs Direct Payments</div>
-                      <div style={{fontSize:20,fontFamily:"monospace",fontWeight:800,color:result.extraCostVsDirect>0?C.amber:C.green}}>
+                      <div style={{fontSize:17,fontFamily:"monospace",fontWeight:800,color:result.extraCostVsDirect>0?C.amber:C.green}}>
                         {result.extraCostVsDirect>0?"+":""}{fmt(result.extraCostVsDirect)}
                       </div>
                       <div style={{fontSize:11,color:C.textDim,marginTop:2,lineHeight:1.4}}>
@@ -1968,41 +1963,37 @@ function App(){
                 </div>
               </div>
             </div>
-
-            {/* RIGHT COLUMN: cashflow toggle + strategy settings */}
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-
-              {/* Cashflow optimization toggle */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.bg,border:`1px solid ${optimizeCashflow?C.green+"66":C.border}`,borderRadius:8,padding:"10px 14px",cursor:"pointer",transition:"border-color 0.2s"}}
-                onClick={()=>setOptimizeCashflow(!optimizeCashflow)}>
-                <div>
-                  <div style={{fontSize:12,fontWeight:700,color:optimizeCashflow?C.green:C.text,marginBottom:2}}>
-                    {optimizeCashflow?"✓ Cashflow optimization ON":"Cashflow optimization"}
-                  </div>
-                  <div style={{fontSize:11,color:C.textDim,lineHeight:1.5}}>
-                    {optimizeCashflow
-                      ?"Bills timed to day 29 — income parks in HELOC 4 extra days each month. Small but real saving. See the FAQ on daily cashflow optimization for the full playbook."
-                      :"Model optimal bill timing: paycheck deposits day 1, all expenses paid day 29 via credit card. Maximizes daily average balance reduction."}
-                  </div>
-                </div>
-                <div style={{width:40,height:22,borderRadius:11,background:optimizeCashflow?C.green:C.border,position:"relative",flexShrink:0,transition:"background 0.2s",marginLeft:12}}>
-                  <div style={{position:"absolute",top:3,left:optimizeCashflow?20:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
-                </div>
-              </div>
-
-              {/* Strategy Settings */}
-              {result?<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px 18px"}}>
-                <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:14,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>// Live Rate & Strategy Controls</div>
-                <SliderInput label={`HELOC Rate — ${helocRate.toFixed(2)}%`} value={helocRate} min={5.0} max={15.0} step={0.25} onChange={setHelocRate} format={v=>v.toFixed(2)+"%"} tip="Drag to see how your results change at different HELOC rates. This updates the simulation live — no need to go back to the calculator."/>
-                <div style={{height:1,background:C.border,margin:"12px 0"}}/>
-                <SliderInput label="Equity Drawn Per Cycle (Chunk Size)" value={redrawPct} min={0.10} max={1.0} step={0.05} onChange={setRedrawPct} format={v=>Math.round(v*100)+"%"} tip="Chunking — what % of available HELOC ceiling gets applied to the mortgage each cycle. Lower % = smaller HELOC balance = less daily interest. The sweet spot is usually 25%."/>
-                <StrategyExplainer redrawPct={redrawPct} surplus={surplus} result={result} params={params} useRentalHeloc={useRentalHeloc}/>
-              </div>:<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:24,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:C.textDim,fontFamily:"monospace",fontSize:12}}>Enter your numbers in the Calculator tab to see results</span></div>}
-
-            </div>{/* end right column */}
           </div>
 
-            {result&&<>
+          {/* Cashflow optimization — below verdict box, above stat cards */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.bg,border:`1px solid ${optimizeCashflow?C.green+"66":C.border}`,borderRadius:8,padding:"10px 14px",marginBottom:16,cursor:"pointer",transition:"border-color 0.2s"}}
+            onClick={()=>setOptimizeCashflow(!optimizeCashflow)}>
+            <div>
+              <div style={{fontSize:12,fontWeight:700,color:optimizeCashflow?C.green:C.text,marginBottom:2}}>
+                {optimizeCashflow?"✓ Cashflow optimization ON":"Cashflow optimization"}
+              </div>
+              <div style={{fontSize:11,color:C.textDim,lineHeight:1.5}}>
+                {optimizeCashflow
+                  ?"Bills timed to day 29 — income parks in HELOC 4 extra days each month. Small but real saving."
+                  :"Model optimal bill timing: paycheck deposits day 1, all expenses paid day 29 via credit card."}
+              </div>
+            </div>
+            <div style={{width:40,height:22,borderRadius:11,background:optimizeCashflow?C.green:C.border,position:"relative",flexShrink:0,transition:"background 0.2s",marginLeft:12}}>
+              <div style={{position:"absolute",top:3,left:optimizeCashflow?20:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
+            </div>
+          </div>
+
+          {/* Strategy Settings — full width below toggle */}
+          {result?<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px 18px",marginBottom:16}}>
+            <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:14,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>// Live Rate & Strategy Controls</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start"}}>
+              <SliderInput label={`HELOC Rate — ${helocRate.toFixed(2)}%`} value={helocRate} min={5.0} max={15.0} step={0.25} onChange={setHelocRate} format={v=>v.toFixed(2)+"%"} tip="Drag to see how your results change at different HELOC rates. This updates the simulation live — no need to go back to the calculator."/>
+              <SliderInput label="Equity Drawn Per Cycle (Chunk Size)" value={redrawPct} min={0.10} max={1.0} step={0.05} onChange={setRedrawPct} format={v=>Math.round(v*100)+"%"} tip="Chunking — what % of available HELOC ceiling gets applied to the mortgage each cycle. Lower % = smaller HELOC balance = less daily interest. The sweet spot is usually 25%."/>
+            </div>
+            <StrategyExplainer redrawPct={redrawPct} surplus={surplus} result={result} params={params} useRentalHeloc={useRentalHeloc}/>
+          </div>:<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:24,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16}}><span style={{color:C.textDim,fontFamily:"monospace",fontSize:12}}>Enter your numbers in the Calculator tab to see results</span></div>}
+
+{result&&<>
               {/* Key stat cards — 6 in 2 rows */}
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:10}}>
                 <Card label="Payoff Timeline" value={mo(result.months)} sub={`vs ${mo(result.baseline.months)} following standard amortization`} color={C.green}/>
