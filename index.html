@@ -1954,17 +1954,23 @@ function App(){
                          <div style={{fontSize:11,color:C.textDim,marginTop:2}}>{mo(result.months)} vs {mo(result.baseline.months)}</div>
                        </div>
                     }
+                    {/* Card 3: cost vs direct payments */}
+                    <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 14px"}}>
+                      <div style={{fontSize:10,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>vs Direct Payments</div>
+                      <div style={{fontSize:20,fontFamily:"monospace",fontWeight:800,color:result.extraCostVsDirect>0?C.amber:C.green}}>
+                        {result.extraCostVsDirect>0?"+":""}{fmt(result.extraCostVsDirect)}
+                      </div>
+                      <div style={{fontSize:11,color:C.textDim,marginTop:2,lineHeight:1.4}}>
+                        {result.extraCostVsDirect>0?"liquidity cost — equity stays accessible":"VB cheaper than direct too"}
+                      </div>
+                    </div>
                   </div>}
                 </div>
               </div>
             </div>
-            {/* Strategy Settings */}
-            {result?<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px 18px"}}>
-              <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:14,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>// Live Rate & Strategy Controls</div>
-              <SliderInput label={`HELOC Rate — ${helocRate.toFixed(2)}%`} value={helocRate} min={5.0} max={15.0} step={0.25} onChange={setHelocRate} format={v=>v.toFixed(2)+"%"} tip="Drag to see how your results change at different HELOC rates. This updates the simulation live — no need to go back to the calculator."/>
-              <div style={{height:1,background:C.border,margin:"12px 0"}}/>
-              <SliderInput label="Equity Drawn Per Cycle (Chunk Size)" value={redrawPct} min={0.10} max={1.0} step={0.05} onChange={setRedrawPct} format={v=>Math.round(v*100)+"%"} tip="Chunking — what % of available HELOC ceiling gets applied to the mortgage each cycle. Lower % = smaller HELOC balance = less daily interest. The sweet spot is usually 25%."/>
-              {/* Daily cashflow optimization toggle */}
+
+            {/* Cashflow optimization — below verdict */}
+            {/* Daily cashflow optimization toggle */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.bg,border:`1px solid ${optimizeCashflow?C.green+"66":C.border}`,borderRadius:8,padding:"10px 14px",marginBottom:14,cursor:"pointer",transition:"border-color 0.2s"}}
                 onClick={()=>setOptimizeCashflow(!optimizeCashflow)}>
                 <div>
@@ -1981,6 +1987,13 @@ function App(){
                   <div style={{position:"absolute",top:3,left:optimizeCashflow?20:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
                 </div>
               </div>
+
+            {/* Strategy Settings */}
+            {result?<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px 18px"}}>
+              <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:14,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>// Live Rate & Strategy Controls</div>
+              <SliderInput label={`HELOC Rate — ${helocRate.toFixed(2)}%`} value={helocRate} min={5.0} max={15.0} step={0.25} onChange={setHelocRate} format={v=>v.toFixed(2)+"%"} tip="Drag to see how your results change at different HELOC rates. This updates the simulation live — no need to go back to the calculator."/>
+              <div style={{height:1,background:C.border,margin:"12px 0"}}/>
+              <SliderInput label="Equity Drawn Per Cycle (Chunk Size)" value={redrawPct} min={0.10} max={1.0} step={0.05} onChange={setRedrawPct} format={v=>Math.round(v*100)+"%"} tip="Chunking — what % of available HELOC ceiling gets applied to the mortgage each cycle. Lower % = smaller HELOC balance = less daily interest. The sweet spot is usually 25%."/>
               <StrategyExplainer redrawPct={redrawPct} surplus={surplus} result={result} params={params} useRentalHeloc={useRentalHeloc}/>
             </div>:<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:24,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:C.textDim,fontFamily:"monospace",fontSize:12}}>Enter your numbers in the Calculator tab to see results</span></div>}
           </div>
