@@ -202,7 +202,7 @@ const FAQS = [
   { q: "What happens if my home value drops significantly while I'm mid-strategy?", a: "This is the real worst-case scenario. Think it through before you start.\n\nWhat happens to your HELOC: If your home value drops and combined LTV (mortgage + HELOC) exceeds your lender's limit (~80%), the lender has the right to freeze or reduce your HELOC line. No advance warning required. This happened to hundreds of thousands of borrowers in 2008-2009.\n\nExample: $500k home, $320k mortgage, $80k HELOC = 80% LTV \u2014 right at the limit. Home drops 15% to $425k: combined LTV = ($320k+$80k)/$425k = 94%. Lender freezes the HELOC.\n\nWhat this means mid-strategy: You can no longer draw new chunks. The HELOC balance you already have is still owed and still accrues interest. But you can't use it as the chunking vehicle anymore.\n\nYour fallback \u2014 and it's a good one: Direct extra payments. Take the surplus you were using to pay down the HELOC and send it directly to the mortgage principal instead. You don't lose your progress. The mortgage is still lower than before the strategy. You just switch methods.\n\nHow to reduce this risk: (1) Don't draw close to the maximum LTV \u2014 use 70% in the calculator to leave buffer. (2) Build a separate emergency fund so a frozen HELOC doesn't cause a cash crisis. (3) Use a community bank or credit union \u2014 more stable than big banks during downturns. (4) Keep HELOC balances small via conservative chunk sizes \u2014 less exposure if frozen." }
 ];
 function simulate(p) {
-  const { mortgageBal, mortgageRate, mortgagePmt, homeValue, helocRate, monthlyIncome, livingExpenses, monthlyDebts, savings, redrawPct, ltvLimit, appreciationRate, helocFees, remainingYears, helocCap, rentalMortBal = 0, recast = false, recastFee = 0, optimizeCashflow = false } = p;
+  const { mortgageBal, mortgageRate, mortgagePmt, homeValue, helocRate, monthlyIncome, livingExpenses, monthlyDebts, savings, redrawPct, ltvLimit, appreciationRate, helocFees, remainingYears, helocCap, rentalMortBal = 0, recast = false, recastFee = 0, recastMode = "initial", optimizeCashflow = false } = p;
   const ltv = ltvLimit / 100;
   const dailyRate = helocRate / 100 / 365;
   const mr = mortgageRate / 100 / 12;
@@ -294,6 +294,14 @@ function simulate(p) {
         hBal = draw;
         cycleCount++;
         cycleLog.push({ cycle: cycleCount, month, draw, mortgageAfter: mBal, homeValue: currentHomeValue, ceiling });
+        if (recast && recastMode === "every" && mBal > 0.01) {
+          const n2 = remainingYears * 12;
+          const newPmt2 = mr === 0 ? mBal / n2 : mBal * mr * Math.pow(1 + mr, n2) / (Math.pow(1 + mr, n2) - 1);
+          recastFreedPmt = piPmtOrig - newPmt2;
+          piPmt = newPmt2;
+          currentMortgagePmt = piPmt;
+          totalFeesPaid += recastFee;
+        }
       }
     }
     if (month % 12 === 0) {
@@ -317,7 +325,7 @@ function simulate(p) {
     dMBal = Math.max(0, dMBal + i - Math.min(dMBal + i, piPmtOrig + extra));
   }
   const totalCost = totalMInt + totalHInt + totalFeesPaid;
-  return { months: month, totalMInt, totalHInt, totalFeesPaid, total: totalCost, yearData, cycleLog, cycleCount, initialDraw, maxDraw, savingsApplied, ltvCeiling: currentHomeValue * ltv, baseline: { months: bMo, totalInt: bMInt }, direct: { months: dMo, totalInt: dMInt }, interestSavedVsBaseline: bMInt - totalCost, extraCostVsDirect: totalCost - dMInt, recastFreedPmt, piPmtOrig, piPmtAfterRecast: piPmt };
+  return { months: month, totalMInt, totalHInt, totalFeesPaid, total: totalCost, yearData, cycleLog, cycleCount, initialDraw, maxDraw, savingsApplied, ltvCeiling: currentHomeValue * ltv, baseline: { months: bMo, totalInt: bMInt }, direct: { months: dMo, totalInt: dMInt }, interestSavedVsBaseline: bMInt - totalCost, extraCostVsDirect: totalCost - dMInt, recastFreedPmt, piPmtOrig, piPmtAfterRecast: piPmt, recastCount: recastMode === "every" ? cycleCount : recast ? 1 : 0 };
 }
 const fmt = (n) => "$" + Math.round(n).toLocaleString();
 const fmtD = (n) => "$" + Number(n).toFixed(0);
@@ -735,6 +743,7 @@ function App() {
   const [rentalLtvLimit, setRentalLtvLimit] = useState(75);
   const [doRecast, setDoRecast] = useState(false);
   const [recastFee, setRecastFee] = useState(250);
+  const [recastMode, setRecastMode] = useState("initial");
   const [origLoanAmt, setOrigLoanAmt] = useState(0);
   const [origLoanMonth, setOrigLoanMonth] = useState(1);
   const [origLoanYear, setOrigLoanYear] = useState(2020);
@@ -821,6 +830,7 @@ function App() {
       s("inflationRate", setInflationRate, 3);
       s("optimizeCashflow", setOptimizeCashflow, false);
       s("recastFee", setRecastFee, 250);
+      s("recastMode", setRecastMode, "initial");
       s("origLoanAmt", setOrigLoanAmt, 0);
       s("origLoanMonth", setOrigLoanMonth, 1);
       s("origLoanYear", setOrigLoanYear, 2020);
@@ -897,6 +907,7 @@ function App() {
         redrawPct,
         doRecast,
         recastFee,
+        recastMode,
         origLoanAmt,
         origLoanMonth,
         origLoanYear,
@@ -962,6 +973,7 @@ function App() {
     redrawPct,
     doRecast,
     recastFee,
+    recastMode,
     origLoanAmt,
     origLoanMonth,
     origLoanYear,
@@ -1021,6 +1033,7 @@ function App() {
     rentalMortBal: isRentalA ? rentalMortgageBal : 0,
     recast: doRecast,
     recastFee,
+    recastMode,
     optimizeCashflow
   };
   const result = simulate(params);
