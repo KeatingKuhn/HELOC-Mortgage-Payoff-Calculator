@@ -1902,8 +1902,8 @@ function App(){
             );
           })()}
 
-          {/* ── VERDICT BOX ── */}
-          <div style={{marginBottom:16}}>
+          {/* ── TOP ROW: Verdict + Strategy Controls side by side ── */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16,alignItems:"start"}}>
             {/* Verdict — BIG signal light */}
             <div style={{background:`linear-gradient(135deg,${vc.color}18,${vc.color}08)`,border:`2px solid ${vc.color}66`,borderRadius:12,padding:"22px 24px",position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",top:-30,right:-30,width:140,height:140,borderRadius:"50%",background:vc.color+"12",pointerEvents:"none"}}/>
@@ -1963,35 +1963,39 @@ function App(){
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Cashflow optimization — below verdict box, above stat cards */}
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.bg,border:`1px solid ${optimizeCashflow?C.green+"66":C.border}`,borderRadius:8,padding:"10px 14px",marginBottom:16,cursor:"pointer",transition:"border-color 0.2s"}}
-            onClick={()=>setOptimizeCashflow(!optimizeCashflow)}>
-            <div>
-              <div style={{fontSize:12,fontWeight:700,color:optimizeCashflow?C.green:C.text,marginBottom:2}}>
-                {optimizeCashflow?"✓ Cashflow optimization ON":"Cashflow optimization"}
-              </div>
-              <div style={{fontSize:11,color:C.textDim,lineHeight:1.5}}>
-                {optimizeCashflow
-                  ?"Bills timed to day 29 — income parks in HELOC 4 extra days each month. Small but real saving."
-                  :"Model optimal bill timing: paycheck deposits day 1, all expenses paid day 29 via credit card."}
-              </div>
-            </div>
-            <div style={{width:40,height:22,borderRadius:11,background:optimizeCashflow?C.green:C.border,position:"relative",flexShrink:0,transition:"background 0.2s",marginLeft:12}}>
-              <div style={{position:"absolute",top:3,left:optimizeCashflow?20:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
-            </div>
-          </div>
+            {/* RIGHT: cashflow toggle + strategy controls */}
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
 
-          {/* Strategy Settings — full width below toggle */}
-          {result?<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px 18px",marginBottom:16}}>
-            <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:14,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>// Live Rate & Strategy Controls</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,alignItems:"start"}}>
-              <SliderInput label={`HELOC Rate — ${helocRate.toFixed(2)}%`} value={helocRate} min={5.0} max={15.0} step={0.25} onChange={setHelocRate} format={v=>v.toFixed(2)+"%"} tip="Drag to see how your results change at different HELOC rates. This updates the simulation live — no need to go back to the calculator."/>
-              <SliderInput label="Equity Drawn Per Cycle (Chunk Size)" value={redrawPct} min={0.10} max={1.0} step={0.05} onChange={setRedrawPct} format={v=>Math.round(v*100)+"%"} tip="Chunking — what % of available HELOC ceiling gets applied to the mortgage each cycle. Lower % = smaller HELOC balance = less daily interest. The sweet spot is usually 25%."/>
-            </div>
-            <StrategyExplainer redrawPct={redrawPct} surplus={surplus} result={result} params={params} useRentalHeloc={useRentalHeloc}/>
-          </div>:<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:24,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16}}><span style={{color:C.textDim,fontFamily:"monospace",fontSize:12}}>Enter your numbers in the Calculator tab to see results</span></div>}
+              {/* Cashflow optimization toggle */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.bg,border:`1px solid ${optimizeCashflow?C.green+"66":C.border}`,borderRadius:8,padding:"10px 14px",cursor:"pointer",transition:"border-color 0.2s"}}
+                onClick={()=>setOptimizeCashflow(!optimizeCashflow)}>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:optimizeCashflow?C.green:C.text,marginBottom:2}}>
+                    {optimizeCashflow?"✓ Cashflow optimization ON":"Cashflow optimization"}
+                  </div>
+                  <div style={{fontSize:11,color:C.textDim,lineHeight:1.5}}>
+                    {optimizeCashflow
+                      ?"Bills timed to day 29 — income parks in HELOC 4 extra days each month. Small but real saving."
+                      :"Model optimal bill timing: paycheck deposits day 1, all expenses paid day 29 via credit card."}
+                  </div>
+                </div>
+                <div style={{width:40,height:22,borderRadius:11,background:optimizeCashflow?C.green:C.border,position:"relative",flexShrink:0,transition:"background 0.2s",marginLeft:12}}>
+                  <div style={{position:"absolute",top:3,left:optimizeCashflow?20:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
+                </div>
+              </div>
+
+              {/* Strategy Settings */}
+              {result?<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"16px 18px"}}>
+                <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:14,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>// Live Rate & Strategy Controls</div>
+                <SliderInput label={`HELOC Rate — ${helocRate.toFixed(2)}%`} value={helocRate} min={5.0} max={15.0} step={0.25} onChange={setHelocRate} format={v=>v.toFixed(2)+"%"} tip="Drag to see how your results change at different HELOC rates. This updates the simulation live — no need to go back to the calculator."/>
+                <div style={{height:1,background:C.border,margin:"12px 0"}}/>
+                <SliderInput label="Equity Drawn Per Cycle (Chunk Size)" value={redrawPct} min={0.10} max={1.0} step={0.05} onChange={setRedrawPct} format={v=>Math.round(v*100)+"%"} tip="Chunking — what % of available HELOC ceiling gets applied to the mortgage each cycle. Lower % = smaller HELOC balance = less daily interest. The sweet spot is usually 25%."/>
+                <StrategyExplainer redrawPct={redrawPct} surplus={surplus} result={result} params={params} useRentalHeloc={useRentalHeloc}/>
+              </div>:<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:24,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:C.textDim,fontFamily:"monospace",fontSize:12}}>Enter your numbers in the Calculator tab to see results</span></div>}
+
+            </div>{/* end right column */}
+          </div>{/* end 2-col grid */}
 
 {result&&<>
               {/* Key stat cards — 6 in 2 rows */}
