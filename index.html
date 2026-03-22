@@ -1025,7 +1025,7 @@ function App() {
     helocRate: effectiveHelocRate,
     monthlyIncome: effectiveIncome,
     livingExpenses: effectiveLivingExp,
-    monthlyDebts: 0,
+    monthlyDebts,
     savings,
     redrawPct,
     ltvLimit: effectiveLtvLimit,
@@ -1046,7 +1046,7 @@ function App() {
     const monthsElapsed = Math.max(0, (now2.getFullYear() - origLoanYear) * 12 + (now2.getMonth() + 1 - origLoanMonth));
     if (monthsElapsed <= 0) return null;
     const mr2 = mortgageRate / 100 / 12;
-    const n2 = 30 * 12;
+    const n2 = monthsElapsed + remainingYears * 12;
     const origPiPmt = mr2 === 0 ? origLoanAmt / n2 : origLoanAmt * mr2 * Math.pow(1 + mr2, n2) / (Math.pow(1 + mr2, n2) - 1);
     let bal = origLoanAmt, intPaid = 0, prinPaid = 0;
     for (let m = 0; m < Math.min(monthsElapsed, n2); m++) {
@@ -1189,7 +1189,7 @@ function App() {
   )))), /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 1400, margin: "0 auto", padding: "28px 28px" } }, activeSection === "learn" && /* @__PURE__ */ React.createElement("div", { className: "fade-in", style: { display: "flex", flexDirection: "column", gap: 20 } }, /* @__PURE__ */ React.createElement(HowItWorks, null), /* @__PURE__ */ React.createElement(WhoIsThisFor, null)), activeSection === "lender" && /* @__PURE__ */ React.createElement("div", { className: "fade-in" }, /* @__PURE__ */ React.createElement(ChecklistsTab, null)), activeSection === "risk" && /* @__PURE__ */ React.createElement("div", { className: "fade-in", style: { display: "flex", flexDirection: "column", gap: 20 } }, /* @__PURE__ */ React.createElement(RiskScenarios, { baseResult: result, params }), /* @__PURE__ */ React.createElement(BreakevenChart, { result })), activeSection === "faq" && /* @__PURE__ */ React.createElement("div", { className: "fade-in" }, /* @__PURE__ */ React.createElement(FaqSection, null)), activeSection === "calculator" && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" } }, /* @__PURE__ */ React.createElement("div", null, (() => {
     const Accordion = ({ id, title, summary, children }) => {
       const open = !!openSections[id];
-      return /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, border: `1px solid ${open ? C.accent + "55" : C.border}`, borderRadius: 12, marginBottom: 12, overflow: "hidden", transition: "border-color 0.2s" } }, /* @__PURE__ */ React.createElement("button", { onClick: () => toggleSection(id), style: { width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: open ? C.accent : C.text, fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700 } }, title), /* @__PURE__ */ React.createElement("span", { style: { display: "flex", alignItems: "center", gap: 10, flexShrink: 0 } }, !open && summary && /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11, color: C.textDim, fontFamily: "monospace" } }, summary), /* @__PURE__ */ React.createElement("span", { style: { color: open ? C.accent : C.textDim, fontSize: 18, fontFamily: "monospace", transition: "transform 0.2s", display: "inline-block", transform: open ? "rotate(0deg)" : "rotate(-90deg)" } }, "\u25BE"))), /* @__PURE__ */ React.createElement("div", { className: `accordion-body ${open ? "open" : "closed"}`, style: { padding: "0 18px", borderTop: open ? `1px solid ${C.border}` : "none" } }, /* @__PURE__ */ React.createElement("div", { style: { paddingTop: 4, paddingBottom: 18 } }, children)));
+      return /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, border: `1px solid ${open ? C.accent + "55" : C.border}`, borderRadius: 12, marginBottom: 12, overflow: "hidden", transition: "border-color 0.2s" } }, /* @__PURE__ */ React.createElement("button", { onClick: () => toggleSection(id), style: { width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: open ? C.accent : C.text, fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700 } }, title), /* @__PURE__ */ React.createElement("span", { style: { display: "flex", alignItems: "center", gap: 10, flexShrink: 0 } }, !open && summary && /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11, color: C.textDim, fontFamily: "monospace" } }, summary), /* @__PURE__ */ React.createElement("span", { style: { color: open ? C.accent : C.textDim, fontSize: 18, fontFamily: "monospace", transition: "transform 0.2s", display: "inline-block", transform: open ? "rotate(0deg)" : "rotate(-90deg)" } }, "\u25BE"))), /* @__PURE__ */ React.createElement("div", { className: `accordion-body ${open ? "open" : "closed"}`, style: { padding: "0 18px", borderTop: open ? `1px solid ${C.border}` : "none", overflowX: "visible" } }, /* @__PURE__ */ React.createElement("div", { style: { paddingTop: 4, paddingBottom: 18 } }, children)));
     };
     const TI = ({ label, mode, setMode, monthly, setMonthly, annual, setAnnual, tip }) => /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 14 } }, /* @__PURE__ */ React.createElement(Label, { tip }, label), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 8 } }, [
       { v: "monthly", l: "Monthly", icon: "\u{1F4C5}", hint: "per month" },
@@ -1373,10 +1373,10 @@ function App() {
         padding: "7px 4px",
         borderRadius: 6,
         cursor: "pointer",
-        border: `1px solid ${mode === "none" && !doRecast || doRecast && recastMode === mode ? C.accent : C.border}`,
-        background: mode === "none" && !doRecast || doRecast && recastMode === mode ? C.accentGlow : "transparent",
+        border: `1px solid ${(mode === "none" && !doRecast) || (doRecast && recastMode === mode) ? C.accent : C.border}`,
+        background: (mode === "none" && !doRecast) || (doRecast && recastMode === mode) ? C.accentGlow : "transparent",
         fontSize: 11,
-        color: mode === "none" && !doRecast || doRecast && recastMode === mode ? C.accent : C.textMid,
+        color: (mode === "none" && !doRecast) || (doRecast && recastMode === mode) ? C.accent : C.textMid,
         fontFamily: "monospace",
         transition: "all 0.15s"
       }
@@ -1538,83 +1538,82 @@ Calculator: ${window.location.href}`;
     { label: `Standard Amortization \u2014 No Extra Payments`, payoff: mo(result.baseline.months), mInt: result.baseline.totalInt, hInt: 0, total: result.baseline.totalInt, liquidity: "Full liquidity \u2014 no equity locked up beyond normal amortization", color: C.textMid, note: "Default path \u2014 every payment follows the front-loaded amortization schedule.", highlight: false },
     { label: `Velocity Banking \u2014 ${result.cycleCount} cycle${result.cycleCount !== 1 ? "s" : ""}`, payoff: mo(result.months), mInt: result.totalMInt, hInt: result.totalHInt, total: result.total, liquidity: `${fmt(result.ltvCeiling)} line accessible`, color: C.accent, note: "Early payoff + savings + liquidity.", highlight: true },
     { label: "Direct Extra Payments", payoff: mo(result.direct.months), mInt: result.direct.totalInt, hInt: 0, total: result.direct.totalInt, liquidity: "Equity locked \u2014 but a zero-balance HELOC opened separately gives full backstop at near-zero cost", color: C.amber, note: "Lowest interest. Open a separate zero-balance HELOC as backstop \u2014 costs nothing if unused.", highlight: false }
-  ].map((s, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { padding: "14px 16px", borderBottom: i < 2 ? `1px solid ${C.border}` : "none", background: s.highlight ? C.accentGlow : "transparent", borderLeft: `3px solid ${s.highlight ? C.accent : "transparent"}` } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8, gap: 6 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: s.color, lineHeight: 1.3 } }, s.label), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "monospace", fontSize: 14, fontWeight: 700, color: C.text, flexShrink: 0 } }, s.payoff)), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 8 } }, [["Mtg Int", fmt(s.mInt), C.amber], ["HELOC Int", fmt(s.hInt), s.hInt > 0 ? C.accent : C.textDim], ["Total", fmt(s.total), s.color]].map(([lbl, val, col]) => /* @__PURE__ */ React.createElement("div", { key: lbl, style: { background: C.surfaceAlt, borderRadius: 5, padding: "7px 8px" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 8, color: C.textDim, fontFamily: "monospace", textTransform: "uppercase", marginBottom: 2 } }, lbl), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, fontFamily: "monospace", color: col, fontWeight: 700 } }, val)))), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.textDim } }, s.liquidity), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.textDim, fontStyle: "italic", marginTop: 2 } }, s.note))))))), !result && /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 36, textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 44, marginBottom: 14 } }, "\u{1F3E0}"), /* @__PURE__ */ React.createElement("div", { style: { color: C.red, fontFamily: "monospace", fontSize: 15, marginBottom: 12, fontWeight: 700 } }, "INSUFFICIENT EQUITY FOR A HELOC"), /* @__PURE__ */ React.createElement("div", { style: { color: C.textMid, fontSize: 13, lineHeight: 1.8 } }, "Your mortgage balance (", /* @__PURE__ */ React.createElement("strong", { style: { color: C.text } }, fmt(mortgageBal)), ") exceeds the ", ltvLimit, "% LTV ceiling (", /* @__PURE__ */ React.createElement("strong", { style: { color: C.text } }, fmt(homeValue * ltvLimit / 100)), ").", /* @__PURE__ */ React.createElement("br", null), "You need ", /* @__PURE__ */ React.createElement("strong", { style: { color: C.amber } }, fmt(mortgageBal - homeValue * ltvLimit / 100)), " more equity to qualify.", /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("br", null), "Try raising your home value estimate, adjusting the LTV limit, or lowering your mortgage balance to explore future scenarios.")))), /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 1200, margin: "32px auto 0", padding: "20px 28px 0", borderTop: `1px solid ${C.border}` } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, color: C.textDim, fontFamily: "monospace", textAlign: "center", lineHeight: 1.8 } }, "For educational purposes only. Not financial advice. Consult a licensed financial advisor and your lender before making mortgage decisions.", /* @__PURE__ */ React.createElement("br", null), "Assumes ", ltvLimit, "% LTV HELOC \xB7 Income deposited 1st & 15th \xB7 CC paid day 25 \xB7 ", appreciationRate, "%/yr home appreciation \xB7 Exact daily interest accrual.")));
+  ].map((s, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { padding: "14px 16px", borderBottom: i < 2 ? `1px solid ${C.border}` : "none", background: s.highlight ? C.accentGlow : "transparent", borderLeft: `3px solid ${s.highlight ? C.accent : "transparent"}` } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8, gap: 6 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: s.color, lineHeight: 1.3 } }, s.label), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "monospace", fontSize: 14, fontWeight: 700, color: C.text, flexShrink: 0 } }, s.payoff)), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 8 } }, [["Mtg Int", fmt(s.mInt), C.amber], ["HELOC Int", fmt(s.hInt), s.hInt > 0 ? C.accent : C.textDim], ["Total", fmt(s.total), s.color]].map(([lbl, val, col]) => /* @__PURE__ */ React.createElement("div", { key: lbl, style: { background: C.surfaceAlt, borderRadius: 5, padding: "7px 8px" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 8, color: C.textDim, fontFamily: "monospace", textTransform: "uppercase", marginBottom: 2 } }, lbl), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, fontFamily: "monospace", color: col, fontWeight: 700 } }, val)))), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.textDim } }, s.liquidity), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.textDim, fontStyle: "italic", marginTop: 2 } }, s.note))))))), /* @__PURE__ */ React.createElement(React.Fragment, null,
+  result && /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.accent}33`, borderRadius: 12, padding: "20px 24px", marginBottom: 16 } },
+    /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 } },
+      /* @__PURE__ */ React.createElement("div", null,
+        /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.accent, fontFamily: "monospace", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 4 } }, "// Alternative: Invest Instead"),
+        /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: C.textMid, lineHeight: 1.5 } },
+          "What if you invested your ",
+          /* @__PURE__ */ React.createElement("strong", { style: { color: C.text } }, fmt(params.monthlyIncome - params.livingExpenses - params.mortgagePmt), "/mo"),
+          " surplus instead of paying down your ", params.mortgageRate, "% mortgage?"
+        )
+      ),
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, flexShrink: 0 } },
+        /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11, color: C.textDim, fontFamily: "monospace", whiteSpace: "nowrap" } }, "APY:"),
+        /* @__PURE__ */ React.createElement("input", { type: "range", min: 2, max: 20, step: 0.5, value: investApy, onChange: (e) => setInvestApy(Number(e.target.value)), style: { width: 120, accentColor: C.accent } }),
+        /* @__PURE__ */ React.createElement("span", { style: { fontSize: 14, fontFamily: "monospace", fontWeight: 700, color: C.accent, minWidth: 40 } }, investApy.toFixed(1), "%")
+      )
+    ),
+    (() => {
+      const monthlySurplus = params.monthlyIncome - params.livingExpenses - params.mortgagePmt;
+      const vbMonths = result.months;
+      const r = investApy / 100 / 12;
+      const fvVbPeriod = r > 0 ? monthlySurplus * (Math.pow(1 + r, vbMonths) - 1) / r : monthlySurplus * vbMonths;
+      const vbInterestSaved = result.interestSavedVsBaseline;
+      const investBeatsVb = fvVbPeriod > vbInterestSaved;
+      const breakEvenApy = (() => {
+        for (let a = 0.5; a <= 20; a += 0.05) {
+          const mr = a / 100 / 12;
+          const fv = monthlySurplus * (Math.pow(1 + mr, vbMonths) - 1) / mr;
+          if (fv >= vbInterestSaved) return a;
+        }
+        return null;
+      })();
+      const cdExamples = [{ label: "HYSA/CD ~4.5%", apy: 4.5 }, { label: "S&P 500 avg ~7%", apy: 7 }, { label: "Historical ~10%", apy: 10 }];
+      return /* @__PURE__ */ React.createElement("div", null,
+        /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16 } },
+          /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(0,0,0,0.25)", borderRadius: 8, padding: "10px 12px" } },
+            /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9, color: C.textDim, fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4, whiteSpace: "nowrap" } }, "Portfolio after ", Math.floor(vbMonths / 12), "y ", vbMonths % 12, "mo"),
+            /* @__PURE__ */ React.createElement("div", { style: { fontSize: 18, fontFamily: "monospace", fontWeight: 800, color: C.accent } }, fmt(fvVbPeriod)),
+            /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.textDim, marginTop: 2 } }, "at ", investApy.toFixed(1), "% APY")
+          ),
+          /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(0,0,0,0.25)", borderRadius: 8, padding: "10px 12px" } },
+            /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9, color: C.textDim, fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4, whiteSpace: "nowrap" } }, "VB interest saved"),
+            /* @__PURE__ */ React.createElement("div", { style: { fontSize: 18, fontFamily: "monospace", fontWeight: 800, color: C.green } }, fmt(vbInterestSaved)),
+            /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.textDim, marginTop: 2 } }, "vs doing nothing")
+          ),
+          /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(0,0,0,0.25)", borderRadius: 8, padding: "10px 12px" } },
+            /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9, color: C.textDim, fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4, whiteSpace: "nowrap" } }, "Invest wins by"),
+            /* @__PURE__ */ React.createElement("div", { style: { fontSize: 18, fontFamily: "monospace", fontWeight: 800, color: investBeatsVb ? C.accent : C.amber } }, fmt(Math.abs(fvVbPeriod - vbInterestSaved))),
+            /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.textDim, marginTop: 2 } }, investBeatsVb ? "investing ahead" : "VB ahead")
+          )
+        ),
+        /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" } },
+          cdExamples.map((ex) => {
+            const mr2 = ex.apy / 100 / 12;
+            const fv2 = monthlySurplus * (Math.pow(1 + mr2, vbMonths) - 1) / mr2;
+            const beats = fv2 > vbInterestSaved;
+            return /* @__PURE__ */ React.createElement("div", { key: ex.label, onClick: () => setInvestApy(ex.apy), style: { padding: "6px 12px", borderRadius: 20, cursor: "pointer", fontSize: 11, fontFamily: "monospace", border: `1px solid ${beats ? C.accent + "66" : C.border}`, background: beats ? C.accentGlow : "transparent", color: beats ? C.accent : C.textMid } },
+              ex.label, " → ", fmt(fv2)
+            );
+          })
+        ),
+        /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textDim, lineHeight: 1.7, padding: "10px 14px", background: "rgba(0,0,0,0.15)", borderRadius: 8 } },
+          breakEvenApy !== null
+            ? /* @__PURE__ */ React.createElement("span", null, "Break-even: investing needs ", /* @__PURE__ */ React.createElement("strong", { style: { color: C.text } }, breakEvenApy.toFixed(1), "% APY"), " to match VB savings over ", Math.floor(vbMonths / 12), "y ", vbMonths % 12, "mo. ", breakEvenApy < 4 ? "Your mortgage is cheap debt — the market has historically cleared this easily." : breakEvenApy < 7 ? "Achievable historically, not guaranteed — consider a hybrid approach." : "Investing needs strong returns to beat paydown at this rate.")
+            : /* @__PURE__ */ React.createElement("span", null, "Investing doesn’t break even at any reasonable return — paydown wins clearly."),
+          " ",
+          /* @__PURE__ */ React.createElement("span", { style: { color: C.textDim, fontSize: 11 } }, "Returns not guaranteed. Ignores taxes on gains and assumes consistent monthly contributions.")
+        )
+      );
+    })()
+  )
+),
+!result && /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 36, textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 44, marginBottom: 14 } }, "\u{1F3E0}"), /* @__PURE__ */ React.createElement("div", { style: { color: C.red, fontFamily: "monospace", fontSize: 15, marginBottom: 12, fontWeight: 700 } }, "INSUFFICIENT EQUITY FOR A HELOC"), /* @__PURE__ */ React.createElement("div", { style: { color: C.textMid, fontSize: 13, lineHeight: 1.8 } }, "Your mortgage balance (", /* @__PURE__ */ React.createElement("strong", { style: { color: C.text } }, fmt(mortgageBal)), ") exceeds the ", ltvLimit, "% LTV ceiling (", /* @__PURE__ */ React.createElement("strong", { style: { color: C.text } }, fmt(homeValue * ltvLimit / 100)), ").", /* @__PURE__ */ React.createElement("br", null), "You need ", /* @__PURE__ */ React.createElement("strong", { style: { color: C.amber } }, fmt(mortgageBal - homeValue * ltvLimit / 100)), " more equity to qualify.", /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("br", null), "Try raising your home value estimate, adjusting the LTV limit, or lowering your mortgage balance to explore future scenarios.")))), /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 1200, margin: "32px auto 0", padding: "20px 28px 0", borderTop: `1px solid ${C.border}` } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, color: C.textDim, fontFamily: "monospace", textAlign: "center", lineHeight: 1.8 } }, "For educational purposes only. Not financial advice. Consult a licensed financial advisor and your lender before making mortgage decisions.", /* @__PURE__ */ React.createElement("br", null), "Assumes ", ltvLimit, "% LTV HELOC \xB7 Income deposited 1st & 15th \xB7 CC paid day 25 \xB7 ", appreciationRate, "%/yr home appreciation \xB7 Exact daily interest accrual.")));
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));
 
 </script>
 </body>
 </html>
-          {/* ── INVEST INSTEAD COMPARISON ── */}
-          {result&&<div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:12,padding:"20px 24px",marginBottom:16}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:12}}>
-              <div>
-                <div style={{fontSize:10,color:C.accent,fontFamily:"monospace",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:4}}>// Alternative: Invest Instead</div>
-                <div style={{fontSize:13,color:C.textMid,lineHeight:1.5}}>What if you invested your <strong style={{color:C.text}}>{fmt(params.monthlyIncome-params.livingExpenses-params.mortgagePmt)}/mo</strong> surplus instead of paying down your {params.mortgageRate}% mortgage?</div>
-              </div>
-              <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-                <span style={{fontSize:11,color:C.textDim,fontFamily:"monospace",whiteSpace:"nowrap"}}>APY:</span>
-                <input type="range" min={2} max={15} step={0.5} value={investApy}
-                  onChange={e=>setInvestApy(Number(e.target.value))}
-                  style={{width:120,accentColor:C.accent}}/>
-                <span style={{fontSize:14,fontFamily:"monospace",fontWeight:700,color:C.accent,minWidth:40}}>{investApy.toFixed(1)}%</span>
-              </div>
-            </div>
-            {(()=>{
-              const monthlySurplus = params.monthlyIncome - params.livingExpenses - params.mortgagePmt;
-              const vbMonths = result.months;
-              const r = investApy/100/12;
-              const fvVbPeriod = monthlySurplus * (Math.pow(1+r,vbMonths)-1)/r;
-              const vbInterestSaved = result.interestSavedVsBaseline;
-              const investBeatsVb = fvVbPeriod > vbInterestSaved;
-              const breakEvenApy = (()=>{
-                for(let a=0.5;a<=20;a+=0.05){
-                  const mr=a/100/12;
-                  const fv=monthlySurplus*(Math.pow(1+mr,vbMonths)-1)/mr;
-                  if(fv>=vbInterestSaved) return a;
-                }
-                return null;
-              })();
-              const cdExamples=[{label:"HYSA/CD ~4.5%",apy:4.5},{label:"S&P 500 avg ~7%",apy:7},{label:"Historical ~10%",apy:10}];
-              return <div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
-                  <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 12px"}}>
-                    <div style={{fontSize:9,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4,whiteSpace:"nowrap"}}>Portfolio after {Math.floor(vbMonths/12)}y {vbMonths%12}mo</div>
-                    <div style={{fontSize:18,fontFamily:"monospace",fontWeight:800,color:C.accent}}>{fmt(fvVbPeriod)}</div>
-                    <div style={{fontSize:11,color:C.textDim,marginTop:2}}>at {investApy.toFixed(1)}% APY</div>
-                  </div>
-                  <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 12px"}}>
-                    <div style={{fontSize:9,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4,whiteSpace:"nowrap"}}>VB interest saved</div>
-                    <div style={{fontSize:18,fontFamily:"monospace",fontWeight:800,color:C.green}}>{fmt(vbInterestSaved)}</div>
-                    <div style={{fontSize:11,color:C.textDim,marginTop:2}}>vs doing nothing</div>
-                  </div>
-                  <div style={{background:"rgba(0,0,0,0.25)",borderRadius:8,padding:"10px 12px"}}>
-                    <div style={{fontSize:9,color:C.textDim,fontFamily:"monospace",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:4,whiteSpace:"nowrap"}}>Invest wins by</div>
-                    <div style={{fontSize:18,fontFamily:"monospace",fontWeight:800,color:investBeatsVb?C.accent:C.amber}}>{fmt(Math.abs(fvVbPeriod-vbInterestSaved))}</div>
-                    <div style={{fontSize:11,color:C.textDim,marginTop:2}}>{investBeatsVb?"investing ahead":"VB ahead"}</div>
-                  </div>
-                </div>
-                <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
-                  {cdExamples.map(ex=>{
-                    const mr2=ex.apy/100/12;
-                    const fv2=monthlySurplus*(Math.pow(1+mr2,vbMonths)-1)/mr2;
-                    const beats=fv2>vbInterestSaved;
-                    return <div key={ex.label} onClick={()=>setInvestApy(ex.apy)}
-                      style={{padding:"6px 12px",borderRadius:20,cursor:"pointer",fontSize:11,fontFamily:"monospace",
-                        border:`1px solid ${beats?C.accent+"66":C.border}`,
-                        background:beats?C.accentGlow:"transparent",
-                        color:beats?C.accent:C.textMid}}>
-                      {ex.label} → {fmt(fv2)}
-                    </div>;
-                  })}
-                </div>
-                <div style={{fontSize:12,color:C.textDim,lineHeight:1.7,padding:"10px 14px",background:"rgba(0,0,0,0.15)",borderRadius:8}}>
-                  {breakEvenApy!==null
-                    ?<span>Break-even: investing needs <strong style={{color:C.text}}>{breakEvenApy.toFixed(1)}%</strong> APY to match VB savings over {Math.floor(vbMonths/12)}y {vbMonths%12}mo. {breakEvenApy<4?"Your mortgage is cheap debt — the market has historically cleared this easily.":breakEvenApy<7?"Achievable historically, not guaranteed — consider a hybrid approach.":"Investing needs strong returns to beat paydown at this rate."}</span>
-                    :<span>Investing doesn't break even at any reasonable return — paydown wins clearly.</span>
-                  }
-                  {" "}<span style={{color:C.textDim,fontSize:11}}>Returns not guaranteed. Ignores taxes on gains and assumes consistent monthly contributions.</span>
-                </div>
-              </div>;
-            })()}
-          </div>}
