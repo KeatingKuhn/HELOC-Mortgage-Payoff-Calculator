@@ -1327,7 +1327,8 @@ function App() {
     optimizeCashflow: true,
     annualLumpSum,
     drawPeriodYears,
-    helocRateDrift
+    helocRateDrift,
+    debtConsolidation
   };
   const result = simulate(params);
   const flResult = firstLienMode ? simulateFirstLien({
