@@ -1040,6 +1040,7 @@ function App() {
     return next;
   });
   const [tab, setTab] = useState("year-by-year");
+  useEffect(() => { if (firstLienMode) setTab("cycles-comparison"); }, [firstLienMode]);
   const [activeSection, setActiveSection] = useState("calculator");
   useEffect(() => {
     try {
@@ -1739,7 +1740,7 @@ Calculator: ${window.location.href}`;
     } else {
       prompt("Copy this link:", url);
     }
-  }, style: { background: "transparent", border: `1px solid ${C.border}`, borderRadius: 7, padding: "9px 14px", cursor: "pointer", fontFamily: "monospace", fontSize: 12, color: C.textMid, display: "flex", alignItems: "center", gap: 6 } }, "\u{1F517} Share Link"))), result && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement(Card, { label: "Payoff Timeline", value: mo(result.months), sub: `vs ${mo(result.baseline.months)} following standard amortization`, color: C.green }), /* @__PURE__ */ React.createElement(Card, { label: "Total Interest + Fees", value: fmt(result.total), sub: result.totalFeesPaid > 0 ? `Mtg: ${fmt(result.totalMInt)} \xB7 HELOC: ${fmt(result.totalHInt)} \xB7 Fees: ${fmt(result.totalFeesPaid)}` : `Mortgage: ${fmt(result.totalMInt)} \xB7 HELOC: ${fmt(result.totalHInt)}`, color: C.amber }), /* @__PURE__ */ React.createElement(Card, { label: showInflationAdj ? "Interest Eliminated (Real $)" : "Interest Eliminated", value: inflSavedVsBaseline !== null ? fmt(inflSavedVsBaseline) : fmt(result.interestSavedVsBaseline), sub: showInflationAdj ? `${fmt(result.interestSavedVsBaseline)} nominal \xB7 ${inflationRate}% inflation adj` : "vs standard amortization schedule", color: C.accent })), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: doRecast && result.recastFreedPmt > 0 ? 10 : 20 } }, /* @__PURE__ */ React.createElement(Card, { label: "Chunking Cycles", value: result.cycleCount, sub: `~${Math.round(result.months / result.cycleCount)} months to clear each cycle`, color: C.textMid }), /* @__PURE__ */ React.createElement(Card, { label: "Initial HELOC Draw", value: fmt(result.initialDraw), sub: `${fmt(result.savingsApplied)} from savings applied \xB7 HELOC started at ${fmt(result.initialDraw - result.savingsApplied)}`, color: C.textMid }), /* @__PURE__ */ React.createElement(Card, { label: "vs Locking Cash in Equity", value: (result.extraCostVsDirect > 0 ? "+" : "") + fmt(result.extraCostVsDirect), sub: result.extraCostVsDirect > 0 ? "liquidity premium \u2014 money stays accessible" : "cheaper AND keeps money accessible", color: result.extraCostVsDirect > 0 ? C.amber : C.green })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 14px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textMid } }, "\u{1F4B5} Show savings in ", /* @__PURE__ */ React.createElement("strong", { style: { color: showInflationAdj ? C.accent : C.textMid } }, showInflationAdj ? "today's dollars (inflation-adjusted)" : "nominal dollars (face value)")), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.textDim, fontFamily: "monospace" } }, showInflationAdj ? `${inflationRate}% inflation rate` : "toggle to adjust for inflation")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } }, showInflationAdj && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, color: C.textDim, fontFamily: "monospace" } }, "Rate:"), /* @__PURE__ */ React.createElement(
+  }, style: { background: "transparent", border: `1px solid ${C.border}`, borderRadius: 7, padding: "9px 14px", cursor: "pointer", fontFamily: "monospace", fontSize: 12, color: C.textMid, display: "flex", alignItems: "center", gap: 6 } }, "\u{1F517} Share Link"))), result && /* @__PURE__ */ React.createElement(React.Fragment, null, firstLienMode && flResult && /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(167,139,250,0.10)", border: "1px solid rgba(167,139,250,0.4)", borderRadius: 10, padding: "10px 18px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 } },  /* @__PURE__ */ React.createElement("span", { style: { fontSize: 18 } }, "\u26A1"),  /* @__PURE__ */ React.createElement("div", null,    /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "#a78bfa", fontFamily: "monospace", marginBottom: 2 } }, "FIRST-LIEN MODE ACTIVE \u2014 Numbers below reflect full mortgage replacement by HELOC"),    /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.textDim } }, "No fixed mortgage payment. All income reduces HELOC daily. See Comparison tab for side-by-side vs chunking.")  )), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement(Card, { label: firstLienMode && flResult ? "FL Payoff Timeline" : "Payoff Timeline", value: firstLienMode && flResult ? mo(flResult.months) : mo(result.months), sub: firstLienMode && flResult ? `vs ${mo(result.months)} chunking \xB7 ${mo(result.baseline.months)} standard` : `vs ${mo(result.baseline.months)} following standard amortization`, color: firstLienMode && flResult ? "#a78bfa" : C.green }), /* @__PURE__ */ React.createElement(Card, { label: firstLienMode && flResult ? "FL Total Interest" : "Total Interest + Fees", value: firstLienMode && flResult ? fmt(flResult.total) : fmt(result.total), sub: firstLienMode && flResult ? `HELOC simple interest only \xB7 Chunking: ${fmt(result.total)}` : result.totalFeesPaid > 0 ? `Mtg: ${fmt(result.totalMInt)} \xB7 HELOC: ${fmt(result.totalHInt)} \xB7 Fees: ${fmt(result.totalFeesPaid)}` : `Mortgage: ${fmt(result.totalMInt)} \xB7 HELOC: ${fmt(result.totalHInt)}`, color: firstLienMode && flResult ? "#a78bfa" : C.amber }), /* @__PURE__ */ React.createElement(Card, { label: firstLienMode && flResult ? "FL Interest Eliminated" : showInflationAdj ? "Interest Eliminated (Real $)" : "Interest Eliminated", value: firstLienMode && flResult ? fmt(flResult.interestSaved) : inflSavedVsBaseline !== null ? fmt(inflSavedVsBaseline) : fmt(result.interestSavedVsBaseline), sub: firstLienMode && flResult ? `vs standard amortization \xB7 Chunking saves ${fmt(result.interestSavedVsBaseline)}` : showInflationAdj ? `${fmt(result.interestSavedVsBaseline)} nominal \xB7 ${inflationRate}% inflation adj` : "vs standard amortization schedule", color: firstLienMode && flResult ? "#a78bfa" : C.accent })), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: doRecast && result.recastFreedPmt > 0 ? 10 : 20 } }, /* @__PURE__ */ React.createElement(Card, { label: "Chunking Cycles", value: result.cycleCount, sub: `~${Math.round(result.months / result.cycleCount)} months to clear each cycle`, color: C.textMid }), /* @__PURE__ */ React.createElement(Card, { label: "Initial HELOC Draw", value: fmt(result.initialDraw), sub: `${fmt(result.savingsApplied)} from savings applied \xB7 HELOC started at ${fmt(result.initialDraw - result.savingsApplied)}`, color: C.textMid }), /* @__PURE__ */ React.createElement(Card, { label: "vs Locking Cash in Equity", value: (result.extraCostVsDirect > 0 ? "+" : "") + fmt(result.extraCostVsDirect), sub: result.extraCostVsDirect > 0 ? "liquidity premium \u2014 money stays accessible" : "cheaper AND keeps money accessible", color: result.extraCostVsDirect > 0 ? C.amber : C.green })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 14px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textMid } }, "\u{1F4B5} Show savings in ", /* @__PURE__ */ React.createElement("strong", { style: { color: showInflationAdj ? C.accent : C.textMid } }, showInflationAdj ? "today's dollars (inflation-adjusted)" : "nominal dollars (face value)")), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.textDim, fontFamily: "monospace" } }, showInflationAdj ? `${inflationRate}% inflation rate` : "toggle to adjust for inflation")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } }, showInflationAdj && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, color: C.textDim, fontFamily: "monospace" } }, "Rate:"), /* @__PURE__ */ React.createElement(
     "select",
     {
       value: inflationRate,
@@ -1833,7 +1834,235 @@ Calculator: ${window.location.href}`;
     { step: "Daily Interest", color: C.amber, text: `HELOC charges interest daily on outstanding balance only. Month 1: ~${fmt((result.initialDraw - result.savingsApplied) * (helocRate / 100 / 12))}. Drops every month as balance declines.` },
     { step: "Cycle Completion", color: C.accent, text: `HELOC hits $0 in ~${Math.round(result.months / result.cycleCount)} months. Draw the next equity chunk onto the mortgage. Repeat ${result.cycleCount}\xD7 total cycles.` },
     { step: "Mortgage Free", color: C.green, text: `Done in ${mo(result.months)} vs ${mo(result.baseline.months)} standard amortization. Eliminated ${fmt(result.interestSavedVsBaseline)} in interest. HELOC remains open.` }
-  ].map(({ step, color, text }, i, arr) => /* @__PURE__ */ React.createElement("div", { key: step, style: { padding: "0 14px", borderRight: i < arr.length - 1 ? `1px solid ${C.border}` : "none" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color, fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginBottom: 5 } }, step), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textMid, lineHeight: 1.6 } }, text))))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 2, marginBottom: 14, background: C.surface, padding: 4, borderRadius: 8, border: `1px solid ${C.border}` } }, [["year-by-year", "Year-by-Year"], ["cycles-comparison", "Cycles & Comparison"]].map(([t, l]) => /* @__PURE__ */ React.createElement(Tab, { key: t, label: l, active: tab === t, onClick: () => setTab(t) }))), /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto" } }, /* @__PURE__ */ React.createElement("div", { style: { display: tab === "year-by-year" ? "block" : "none", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { className: "print-table-wrapper", style: { overflowX: "auto" } }, /* @__PURE__ */ React.createElement("table", { style: { minWidth: 780 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: C.bg } }, ["Year", "Mortgage Bal", "HELOC Bal", "Yr Mtg Int", "Yr HELOC Int", "Blended Rate", "Saved vs Nothing", "Liquidity", "Notes"].map((h) => /* @__PURE__ */ React.createElement("th", { key: h, style: { padding: "10px 12px", textAlign: "left", fontSize: 9, color: C.textDim, fontFamily: "monospace", letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 400, whiteSpace: "nowrap" } }, h)))), /* @__PURE__ */ React.createElement("tbody", null, result.yearData.map((y, i) => {
+  ].map(({ step, color, text }, i, arr) => /* @__PURE__ */ React.createElement("div", { key: step, style: { padding: "0 14px", borderRight: i < arr.length - 1 ? `1px solid ${C.border}` : "none" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color, fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginBottom: 5 } }, step), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textMid, lineHeight: 1.6 } }, text))))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 16, marginBottom: 16 } },
+
+  /* ── VIZ 1: AMORTIZATION FRONT-LOADING ── */
+  (() => {
+    const mr2 = params.mortgageRate / 100 / 12;
+    const origBal = params.mortgageBal;
+    const n = params.remainingYears * 12;
+    const pmt = mr2 === 0 ? origBal / n : origBal * mr2 * Math.pow(1 + mr2, n) / (Math.pow(1 + mr2, n) - 1);
+    // Build year-by-year P&I split for standard amortization
+    const bars = [];
+    let bal = origBal;
+    for (let yr = 1; yr <= Math.min(params.remainingYears, 30); yr++) {
+      let yrInt = 0, yrPrin = 0;
+      for (let m = 0; m < 12 && bal > 0.01; m++) {
+        const intPart = bal * mr2;
+        const prinPart = Math.max(0, Math.min(pmt - intPart, bal));
+        yrInt += intPart; yrPrin += prinPart;
+        bal = Math.max(0, bal - prinPart);
+      }
+      bars.push({ yr, yrInt, yrPrin, total: yrInt + yrPrin, pct: yrInt / (yrInt + yrPrin) });
+    }
+    const maxBar = Math.max(...bars.map(b => b.total));
+    const W = 760, H = 260, PL = 52, PR = 16, PT = 16, PB = 48;
+    const cW = W - PL - PR, cH = H - PT - PB;
+    const barW = Math.max(2, cW / bars.length - 2);
+    const xs = (i) => PL + (i + 0.5) * (cW / bars.length);
+    const ys = (v) => PT + cH * (1 - v / maxBar);
+    // Find crossover year (interest < principal)
+    const crossover = bars.findIndex(b => b.pct < 0.5);
+    return /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "16px 18px" } },
+      /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.accent, fontFamily: "monospace", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 4 } }, "// The Front-Loading Problem"),
+      /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4 } }, "Where Your Mortgage Payment Actually Goes — Year by Year"),
+      /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textMid, marginBottom: 14, lineHeight: 1.6 } },
+        "Each bar is one year of payments. ",
+        /* @__PURE__ */ React.createElement("span", { style: { color: C.red } }, "Red = interest going to the bank"),
+        " · ",
+        /* @__PURE__ */ React.createElement("span", { style: { color: C.green } }, "Green = principal reducing your debt"),
+        ". In Year 1, ",
+        /* @__PURE__ */ React.createElement("strong", { style: { color: C.red } }, bars[0] ? Math.round(bars[0].pct * 100) + "%" : "—"),
+        " of every payment is interest. The bank collects most of its profit upfront.",
+        crossover >= 0 ? /* @__PURE__ */ React.createElement("span", null, " The crossover — when you finally pay more principal than interest — isn't until ",
+          /* @__PURE__ */ React.createElement("strong", { style: { color: C.amber } }, "Year " + bars[crossover].yr), ".") : null
+      ),
+      /* @__PURE__ */ React.createElement("svg", { viewBox: `0 0 ${W} ${H}`, style: { width: "100%", display: "block" } },
+        /* grid lines */
+        [0, 0.25, 0.5, 0.75, 1].map((f, i) => /* @__PURE__ */ React.createElement("g", { key: i },
+          /* @__PURE__ */ React.createElement("line", { x1: PL, y1: ys(maxBar * f), x2: PL + cW, y2: ys(maxBar * f), stroke: "#1e2d45", strokeWidth: 0.7 }),
+          /* @__PURE__ */ React.createElement("text", { x: PL - 6, y: ys(maxBar * f) + 4, textAnchor: "end", fontSize: 9, fill: "#4a5568", fontFamily: "monospace" },
+            "$" + Math.round(maxBar * f / 12).toLocaleString())
+        )),
+        /* crossover line */
+        crossover >= 0 && /* @__PURE__ */ React.createElement("line", { x1: xs(crossover) - barW / 2, y1: PT, x2: xs(crossover) - barW / 2, y2: PT + cH, stroke: C.amber, strokeWidth: 1, strokeDasharray: "4,3", opacity: 0.7 }),
+        /* stacked bars */
+        bars.map((b, i) => /* @__PURE__ */ React.createElement("g", { key: i },
+          /* interest (red, bottom) */
+          /* @__PURE__ */ React.createElement("rect", { x: xs(i) - barW / 2, y: ys(b.yrInt), width: barW, height: Math.max(0, ys(0) - ys(b.yrInt)), fill: C.red, opacity: 0.75 }),
+          /* principal (green, top) */
+          /* @__PURE__ */ React.createElement("rect", { x: xs(i) - barW / 2, y: ys(b.total), width: barW, height: Math.max(0, ys(b.yrInt) - ys(b.total)), fill: C.green, opacity: 0.85 }),
+          /* year label every 5 years */
+          i % 5 === 0 && /* @__PURE__ */ React.createElement("text", { x: xs(i), y: H - PB + 14, textAnchor: "middle", fontSize: 9, fill: "#4a5568", fontFamily: "monospace" }, "Yr " + b.yr)
+        )),
+        /* VB payoff marker */
+        result && (() => {
+          const vbYr = result.months / 12;
+          const vbX = PL + (vbYr / params.remainingYears) * cW;
+          return vbX < PL + cW ? /* @__PURE__ */ React.createElement("g", null,
+            /* @__PURE__ */ React.createElement("line", { x1: vbX, y1: PT, x2: vbX, y2: PT + cH, stroke: C.accent, strokeWidth: 1.5, strokeDasharray: "6,3" }),
+            /* @__PURE__ */ React.createElement("rect", { x: vbX - 28, y: PT - 2, width: 56, height: 14, rx: 3, fill: "#0d1f35", stroke: C.accent + "55" }),
+            /* @__PURE__ */ React.createElement("text", { x: vbX, y: PT + 9, textAnchor: "middle", fontSize: 8, fill: C.accent, fontFamily: "monospace", fontWeight: "700" }, "VB PAID OFF")
+          ) : null;
+        })(),
+        /* axis */
+        /* @__PURE__ */ React.createElement("line", { x1: PL, y1: PT + cH, x2: PL + cW, y2: PT + cH, stroke: "#2a3a55", strokeWidth: 1.5 }),
+        /* legend */
+        /* @__PURE__ */ React.createElement("rect", { x: PL, y: H - 14, width: 10, height: 8, fill: C.red, opacity: 0.75 }),
+        /* @__PURE__ */ React.createElement("text", { x: PL + 14, y: H - 7, fontSize: 9, fill: "#8899bb", fontFamily: "monospace" }, "Interest (to bank)"),
+        /* @__PURE__ */ React.createElement("rect", { x: PL + 110, y: H - 14, width: 10, height: 8, fill: C.green, opacity: 0.85 }),
+        /* @__PURE__ */ React.createElement("text", { x: PL + 124, y: H - 7, fontSize: 9, fill: "#8899bb", fontFamily: "monospace" }, "Principal (your equity)"),
+        crossover >= 0 && /* @__PURE__ */ React.createElement("line", { x1: PL + 240, y1: H - 10, x2: PL + 254, y2: H - 10, stroke: C.amber, strokeWidth: 1.5, strokeDasharray: "4,3" }),
+        crossover >= 0 && /* @__PURE__ */ React.createElement("text", { x: PL + 258, y: H - 7, fontSize: 9, fill: "#8899bb", fontFamily: "monospace" }, "Crossover (Year " + (crossover + 1) + ")")
+      )
+    );
+  })(),
+
+  /* ── VIZ 2: CYCLE EQUITY WATERFALL ── */
+  result && result.cycleLog && result.cycleLog.length > 1 && (() => {
+    const W = 760, H = 280, PL = 64, PR = 16, PT = 20, PB = 48;
+    const cW = W - PL - PR, cH = H - PT - PB;
+    const maxMBal = params.mortgageBal;
+    const allMos = result.months;
+    const xs = (mo) => PL + (mo / allMos) * cW;
+    const ys = (v) => PT + cH * (1 - Math.min(v, maxMBal) / maxMBal);
+    // Build mortgage balance line from yearData
+    const mBalPts = [{ mo: 0, mBal: params.mortgageBal - result.initialDraw }];
+    result.yearData.forEach(y => {
+      mBalPts.push({ mo: y.year * 12, mBal: y.mBal });
+    });
+    const mPath = mBalPts.map((p, i) => `${i===0?"M":"L"}${xs(p.mo).toFixed(1)},${ys(p.mBal).toFixed(1)}`).join(" ");
+    // Build ceiling line
+    const ceilPts = result.yearData.map(y => ({ mo: y.year * 12, ceil: y.liquidity + y.mBal + y.hBal }));
+    // Grid vals
+    const gridVals = [0, 0.25, 0.5, 0.75, 1];
+    return /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "16px 18px" } },
+      /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.accent, fontFamily: "monospace", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 4 } }, "// Equity Waterfall — Cycle by Cycle"),
+      /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4 } }, "How Each Chunk Collapses Your Mortgage"),
+      /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textMid, marginBottom: 14, lineHeight: 1.6 } },
+        "Each ",
+        /* @__PURE__ */ React.createElement("span", { style: { color: "#a78bfa" } }, "purple drop"),
+        " is a chunk applied to the mortgage — principal eliminated instantly. The ",
+        /* @__PURE__ */ React.createElement("span", { style: { color: C.accent } }, "blue line"),
+        " is your mortgage balance declining. Each drop is larger than the last because your home appreciates and your equity ceiling grows."
+      ),
+      /* @__PURE__ */ React.createElement("svg", { viewBox: `0 0 ${W} ${H}`, style: { width: "100%", display: "block" } },
+        /* grid */
+        gridVals.map((f, i) => /* @__PURE__ */ React.createElement("g", { key: i },
+          /* @__PURE__ */ React.createElement("line", { x1: PL, y1: ys(maxMBal * f), x2: PL + cW, y2: ys(maxMBal * f), stroke: "#1e2d45", strokeWidth: 0.7 }),
+          /* @__PURE__ */ React.createElement("text", { x: PL - 6, y: ys(maxMBal * f) + 4, textAnchor: "end", fontSize: 9, fill: "#4a5568", fontFamily: "monospace" },
+            "$" + (maxMBal * f / 1000).toFixed(0) + "k")
+        )),
+        /* chunk drop lines */
+        result.cycleLog.map((cyc, i) => i === 0 ? null : /* @__PURE__ */ React.createElement("g", { key: i },
+          /* vertical drop */
+          /* @__PURE__ */ React.createElement("line", {
+            x1: xs(cyc.month), y1: ys(cyc.mortgageAfter + cyc.draw),
+            x2: xs(cyc.month), y2: ys(cyc.mortgageAfter),
+            stroke: "#a78bfa", strokeWidth: 2.5, opacity: 0.9
+          }),
+          /* chunk label */
+          /* @__PURE__ */ React.createElement("text", {
+            x: xs(cyc.month) + 3, y: ys(cyc.mortgageAfter + cyc.draw / 2),
+            fontSize: 8, fill: "#a78bfa", fontFamily: "monospace", fontWeight: "700"
+          }, "-$" + Math.round(cyc.draw / 1000) + "k")
+        )),
+        /* initial chunk */
+        /* @__PURE__ */ React.createElement("line", {
+          x1: xs(0), y1: ys(params.mortgageBal),
+          x2: xs(0), y2: ys(params.mortgageBal - result.initialDraw),
+          stroke: "#a78bfa", strokeWidth: 2.5, opacity: 0.9
+        }),
+        /* @__PURE__ */ React.createElement("text", { x: xs(0) + 3, y: ys(params.mortgageBal - result.initialDraw / 2), fontSize: 8, fill: "#a78bfa", fontFamily: "monospace", fontWeight: "700" },
+          "-$" + Math.round(result.initialDraw / 1000) + "k"),
+        /* mortgage balance line */
+        /* @__PURE__ */ React.createElement("path", { d: mPath, fill: "none", stroke: C.accent, strokeWidth: 2.5 }),
+        /* axis */
+        /* @__PURE__ */ React.createElement("line", { x1: PL, y1: PT + cH, x2: PL + cW, y2: PT + cH, stroke: "#2a3a55", strokeWidth: 1.5 }),
+        /* x axis labels */
+        [0, 0.25, 0.5, 0.75, 1].map((f, i) => {
+          const mo = Math.round(f * allMos);
+          return /* @__PURE__ */ React.createElement("text", { key: i, x: xs(mo), y: H - PB + 14, textAnchor: "middle", fontSize: 9, fill: "#4a5568", fontFamily: "monospace" },
+            "Mo " + mo);
+        }),
+        /* legend */
+        /* @__PURE__ */ React.createElement("line", { x1: PL, y1: H - 14, x2: PL + 20, y2: H - 14, stroke: C.accent, strokeWidth: 2 }),
+        /* @__PURE__ */ React.createElement("text", { x: PL + 24, y: H - 10, fontSize: 9, fill: "#8899bb", fontFamily: "monospace" }, "Mortgage Balance"),
+        /* @__PURE__ */ React.createElement("line", { x1: PL + 140, y1: H - 14, x2: PL + 160, y2: H - 14, stroke: "#a78bfa", strokeWidth: 2.5 }),
+        /* @__PURE__ */ React.createElement("text", { x: PL + 164, y: H - 10, fontSize: 9, fill: "#8899bb", fontFamily: "monospace" }, "Chunks Applied (each cycle)")
+      )
+    );
+  })(),
+
+  /* ── VIZ 3: NET WORTH / LIQUIDITY TRAJECTORY ── */
+  result && (() => {
+    const W = 760, H = 280, PL = 64, PR = 16, PT = 20, PB = 48;
+    const cW = W - PL - PR, cH = H - PT - PB;
+    // Net worth = home value - total debt (mortgage + HELOC)
+    const vbNW = result.yearData.map(y => ({ yr: y.year, nw: y.homeValue - y.mBal - y.hBal }));
+    // Standard amortization net worth
+    const mr2 = params.mortgageRate / 100 / 12;
+    const ar2 = params.appreciationRate / 100 / 12;
+    const pmt2 = mr2 === 0 ? params.mortgageBal / (params.remainingYears * 12) : params.mortgageBal * mr2 * Math.pow(1 + mr2, params.remainingYears * 12) / (Math.pow(1 + mr2, params.remainingYears * 12) - 1);
+    const stdNW = [];
+    let sBal = params.mortgageBal, sHome = params.homeValue;
+    for (let yr = 1; yr <= params.remainingYears; yr++) {
+      for (let m = 0; m < 12; m++) {
+        const intP = sBal * mr2; sBal = Math.max(0, sBal + intP - pmt2); sHome *= 1 + ar2;
+      }
+      stdNW.push({ yr, nw: sHome - sBal });
+    }
+    // FL net worth
+    const flNW = flResult ? flResult.yearData.map(y => ({ yr: y.year, nw: params.homeValue * Math.pow(1 + params.appreciationRate / 100, y.year) - y.bal })) : [];
+    const allNW = [...vbNW.map(d => d.nw), ...stdNW.map(d => d.nw), ...flNW.map(d => d.nw)];
+    const maxNW = Math.max(...allNW, 1);
+    const minNW = Math.min(...allNW, 0);
+    const range = maxNW - minNW;
+    const maxYrs = params.remainingYears;
+    const xs = (yr) => PL + (yr / maxYrs) * cW;
+    const ys = (v) => PT + cH * (1 - (v - minNW) / range);
+    const mkPath = (pts) => pts.map((p, i) => `${i===0?"M":"L"}${xs(p.yr).toFixed(1)},${ys(p.nw).toFixed(1)}`).join(" ");
+    const gridVals = [0, 0.25, 0.5, 0.75, 1].map(f => minNW + range * f);
+    return /* @__PURE__ */ React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "16px 18px" } },
+      /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.accent, fontFamily: "monospace", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 4 } }, "// Net Worth Trajectory"),
+      /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4 } }, "Home Equity Built — All Strategies"),
+      /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textMid, marginBottom: 14, lineHeight: 1.6 } },
+        "Net worth = home value minus total debt at each year. After payoff, the line becomes pure home appreciation with zero debt drag. The steeper the climb, the faster you're building real wealth."
+      ),
+      /* @__PURE__ */ React.createElement("svg", { viewBox: `0 0 ${W} ${H}`, style: { width: "100%", display: "block" } },
+        /* grid */
+        gridVals.map((v, i) => /* @__PURE__ */ React.createElement("g", { key: i },
+          /* @__PURE__ */ React.createElement("line", { x1: PL, y1: ys(v), x2: PL + cW, y2: ys(v), stroke: v === 0 ? "#2a3a55" : "#1e2d45", strokeWidth: v === 0 ? 1.5 : 0.7 }),
+          /* @__PURE__ */ React.createElement("text", { x: PL - 6, y: ys(v) + 4, textAnchor: "end", fontSize: 9, fill: v === 0 ? "#8899bb" : "#4a5568", fontFamily: "monospace" },
+            "$" + (v >= 0 ? "" : "-") + Math.abs(Math.round(v / 1000)) + "k")
+        )),
+        /* standard line */
+        /* @__PURE__ */ React.createElement("path", { d: mkPath(stdNW), fill: "none", stroke: C.red, strokeWidth: 2, strokeDasharray: "8,4", opacity: 0.8 }),
+        /* VB line */
+        /* @__PURE__ */ React.createElement("path", { d: mkPath(vbNW), fill: "none", stroke: C.accent, strokeWidth: 3 }),
+        /* FL line if active */
+        flResult && /* @__PURE__ */ React.createElement("path", { d: mkPath(flNW), fill: "none", stroke: "#a78bfa", strokeWidth: 2.5, strokeDasharray: "4,2" }),
+        /* payoff dots */
+        /* @__PURE__ */ React.createElement("circle", { cx: xs(result.months / 12), cy: ys(vbNW.find(d => d.yr >= Math.ceil(result.months / 12))?.nw || 0), r: 5, fill: C.accent, stroke: "#0a0e1a", strokeWidth: 2 }),
+        /* axis */
+        /* @__PURE__ */ React.createElement("line", { x1: PL, y1: PT + cH, x2: PL + cW, y2: PT + cH, stroke: "#2a3a55", strokeWidth: 1.5 }),
+        [0, 0.2, 0.4, 0.6, 0.8, 1].map((f, i) => {
+          const yr = Math.round(f * maxYrs);
+          return /* @__PURE__ */ React.createElement("text", { key: i, x: xs(yr), y: H - PB + 14, textAnchor: "middle", fontSize: 9, fill: "#4a5568", fontFamily: "monospace" }, "Yr " + yr);
+        }),
+        /* legend */
+        /* @__PURE__ */ React.createElement("line", { x1: PL, y1: H - 14, x2: PL + 20, y2: H - 14, stroke: C.red, strokeWidth: 2, strokeDasharray: "8,4" }),
+        /* @__PURE__ */ React.createElement("text", { x: PL + 24, y: H - 10, fontSize: 9, fill: "#8899bb", fontFamily: "monospace" }, "Standard"),
+        /* @__PURE__ */ React.createElement("line", { x1: PL + 90, y1: H - 14, x2: PL + 110, y2: H - 14, stroke: C.accent, strokeWidth: 2.5 }),
+        /* @__PURE__ */ React.createElement("text", { x: PL + 114, y: H - 10, fontSize: 9, fill: "#8899bb", fontFamily: "monospace" }, "Velocity Banking"),
+        flResult && /* @__PURE__ */ React.createElement("line", { x1: PL + 220, y1: H - 14, x2: PL + 240, y2: H - 14, stroke: "#a78bfa", strokeWidth: 2, strokeDasharray: "4,2" }),
+        flResult && /* @__PURE__ */ React.createElement("text", { x: PL + 244, y: H - 10, fontSize: 9, fill: "#8899bb", fontFamily: "monospace" }, "First-Lien HELOC")
+      )
+    );
+  })()
+
+),
+/* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 2, marginBottom: 14, background: C.surface, padding: 4, borderRadius: 8, border: `1px solid ${C.border}` } }, [["year-by-year", "Year-by-Year"], ["cycles-comparison", "Cycles & Comparison"]].map(([t, l]) => /* @__PURE__ */ React.createElement(Tab, { key: t, label: l, active: tab === t, onClick: () => setTab(t) }))), /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto" } }, /* @__PURE__ */ React.createElement("div", { style: { display: tab === "year-by-year" ? "block" : "none", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { className: "print-table-wrapper", style: { overflowX: "auto" } }, /* @__PURE__ */ React.createElement("table", { style: { minWidth: 780 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: C.bg } }, ["Year", "Mortgage Bal", "HELOC Bal", "Yr Mtg Int", "Yr HELOC Int", "Blended Rate", "Saved vs Nothing", "Liquidity", "Notes"].map((h) => /* @__PURE__ */ React.createElement("th", { key: h, style: { padding: "10px 12px", textAlign: "left", fontSize: 9, color: C.textDim, fontFamily: "monospace", letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 400, whiteSpace: "nowrap" } }, h)))), /* @__PURE__ */ React.createElement("tbody", null, result.yearData.map((y, i) => {
     const prevY = i > 0 ? result.yearData[i - 1] : null;
     const note = plainEnglishRow(y, prevY, result.cycleLog);
     const isBreakeven = y.savedVsNothing > 0 && (!prevY || prevY.savedVsNothing <= 0);
