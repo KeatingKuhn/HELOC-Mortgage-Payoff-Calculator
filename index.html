@@ -48,9 +48,9 @@
     margin: 0;
     background: var(--bg);
     color: var(--text);
-    font: 16px/1.6 var(--sans);
+    font: 15px/1.5 var(--sans);
   }
-  main { max-width: 1000px; margin: 0 auto; padding: 0 16px 48px; position: relative; }
+  main { max-width: 1400px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 40px) 40px; position: relative; }
   p { margin: 0 0 12px; }
   a { color: var(--accent); }
   strong { color: var(--text); }
@@ -59,7 +59,7 @@
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
 
   /* ── Hero ── */
-  .hero { position: relative; padding: 56px 0 28px; overflow: hidden; }
+  .hero { position: relative; padding: 28px 0 6px; overflow: hidden; }
   .hero::before {
     content: ""; position: absolute; inset: 0; pointer-events: none;
     background-image:
@@ -79,14 +79,14 @@
   .eyebrow::before { content: ""; width: 24px; height: 1px; background: currentColor; opacity: 0.7; }
   h1 {
     font-family: var(--serif); font-weight: 400; letter-spacing: -0.02em; line-height: 1.08;
-    font-size: clamp(2.1rem, 6vw, 3.6rem); margin: 0 0 16px; position: relative;
+    font-size: clamp(1.8rem, 3.6vw, 2.6rem); margin: 0 0 8px; position: relative;
   }
   h1 em, .headline em { font-style: italic; color: var(--accent); text-shadow: 0 0 32px rgba(0, 212, 255, 0.35); }
-  .lede { color: var(--text-2); font-size: 1.1rem; max-width: 44rem; position: relative; }
-  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 10px; position: relative; }
+  .lede { color: var(--text-2); font-size: 1rem; max-width: 52rem; position: relative; margin-bottom: 8px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 6px; position: relative; }
   .pill {
     font-family: var(--mono); font-size: 12px; letter-spacing: 0.03em;
-    padding: 6px 12px; border-radius: 999px; border: 1px solid; display: inline-flex; gap: 6px; align-items: center;
+    padding: 4px 10px; border-radius: 999px; border: 1px solid; display: inline-flex; gap: 6px; align-items: center;
   }
   .pill.c { color: var(--accent); border-color: rgba(0, 212, 255, 0.35); background: rgba(0, 212, 255, 0.06); }
   .pill.g { color: var(--green); border-color: rgba(0, 229, 160, 0.35); background: rgba(0, 229, 160, 0.06); }
@@ -97,27 +97,40 @@
   .card {
     background: linear-gradient(180deg, rgba(255,255,255,0.015), transparent 40%), var(--surface);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    margin: 18px 0;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 14px 0;
     position: relative;
   }
   .card.glowing { border-color: rgba(0, 212, 255, 0.35); box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.08), 0 20px 60px -30px rgba(0, 212, 255, 0.35); }
   .sec-label { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); margin: 0 0 6px; }
   .sec-label b { color: var(--accent); font-weight: 600; }
-  h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.5rem, 3.4vw, 2rem); letter-spacing: -0.01em; line-height: 1.2; margin: 0 0 14px; }
-  h3 { font-size: 1.05rem; margin: 22px 0 8px; }
+  h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.25rem, 2.2vw, 1.55rem); letter-spacing: -0.01em; line-height: 1.2; margin: 0 0 10px; }
+  h3 { font-size: 0.95rem; margin: 14px 0 8px; }
+  .row { margin: 14px 0; }
+  .row > .card { margin: 0; }
+  @media (min-width: 1080px) {
+    .row.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+    .row.top { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); }
+    .sticky { position: sticky; top: 12px; }
+  }
+  .row.two > .card + .card { margin-top: 14px; }
+  @media (min-width: 1080px) { .row.two > .card + .card { margin-top: 0; } }
+  .catch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 8px 28px; }
+  .catch-grid h3 { margin-top: 4px; }
+  .faq-cols { column-width: 420px; column-gap: 32px; }
+  .faq-cols details { break-inside: avoid; }
 
   /* ── Form ── */
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px 22px; }
-  .field label { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
-  .field .hint { display: block; color: var(--text-3); font-size: 0.85rem; margin-top: 6px; line-height: 1.45; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 18px; }
+  .field label { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); margin-bottom: 4px; }
+  .field .hint { display: block; color: var(--text-3); font-size: 0.8rem; margin-top: 2px; line-height: 1.35; }
   .input {
     display: flex; align-items: center;
     background: var(--field);
     border: 1px solid var(--border);
     border-radius: 10px;
-    min-height: 46px;
+    min-height: 42px;
     transition: border-color .15s, box-shadow .15s;
   }
   .input:hover { border-color: var(--border-hi); }
@@ -127,7 +140,7 @@
     flex: 1; min-width: 0;
     border: 0; background: transparent; color: var(--text);
     font-family: var(--mono); font-size: 16px; font-weight: 600;
-    padding: 10px 12px 10px 0;
+    padding: 8px 12px 8px 0;
     outline: none;
   }
   .input select { padding-left: 12px; font-family: var(--sans); font-weight: 500; }
@@ -137,7 +150,7 @@
 
   input[type="range"] {
     -webkit-appearance: none; appearance: none;
-    width: 100%; height: 28px; margin: 6px 0 0; background: transparent; cursor: pointer;
+    width: 100%; height: 24px; margin: 2px 0 0; background: transparent; cursor: pointer;
     --pct: 50%;
   }
   input[type="range"]::-webkit-slider-runnable-track {
@@ -157,19 +170,19 @@
   input[type="range"]:focus-visible { outline: none; }
   input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--accent), 0 0 18px rgba(0, 212, 255, 0.8); }
 
-  .derived { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .derived { margin-top: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
   .chip {
-    background: var(--field); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px;
+    background: var(--field); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px;
   }
   .chip .k { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
-  .chip .v { font-family: var(--mono); font-weight: 700; font-size: 1.15rem; }
+  .chip .v { font-family: var(--mono); font-weight: 700; font-size: 1.05rem; }
   .chip .v.fuel { color: var(--green); }
   .chip .v.bad { color: var(--red); }
   .chip.note { grid-column: 1 / -1; color: var(--text-2); font-size: 0.9rem; }
   .chip.note.bad { color: var(--red); border-color: rgba(255, 92, 122, 0.35); }
-  .example-note { font-family: var(--mono); font-size: 12px; color: var(--amber); margin: -4px 0 16px; }
+  .example-note { font-family: var(--mono); font-size: 12px; color: var(--amber); margin: -4px 0 10px; }
 
-  details { margin-top: 18px; }
+  details { margin-top: 10px; }
   details > summary {
     cursor: pointer; font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
     color: var(--accent); min-height: 44px; display: flex; align-items: center; gap: 10px; list-style: none;
@@ -180,30 +193,30 @@
     border: 1px solid currentColor; font-size: 14px; line-height: 1; flex: none;
   }
   details[open] > summary::before { content: "−"; }
-  .subhead { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-3); margin: 22px 0 10px; padding-top: 16px; border-top: 1px dashed var(--border); }
+  .subhead { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-3); margin: 14px 0 8px; padding-top: 12px; border-top: 1px dashed var(--border); }
 
   /* ── Answer ── */
-  .headline { font-family: var(--serif); font-weight: 400; font-size: clamp(1.9rem, 5vw, 3rem); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 10px; }
-  .answer-sub { color: var(--text-2); font-size: 1.05rem; max-width: 46rem; }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 22px 0 8px; }
+  .headline { font-family: var(--serif); font-weight: 400; font-size: clamp(1.7rem, 3vw, 2.3rem); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .answer-sub { color: var(--text-2); font-size: 0.95rem; margin-bottom: 0; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 14px 0 4px; }
   .stat {
-    background: var(--field); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px 14px;
+    background: var(--field); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px 10px;
     position: relative; overflow: hidden;
   }
   .stat::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--c, var(--accent)); box-shadow: 0 0 16px var(--c, var(--accent)); }
   .stat .k { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); }
-  .stat .v { font-family: var(--mono); font-weight: 700; font-size: clamp(1.5rem, 3.4vw, 2rem); line-height: 1.2; margin: 6px 0 2px; color: var(--c, var(--accent)); text-shadow: 0 0 24px color-mix(in srgb, var(--c, var(--accent)) 35%, transparent); }
-  .stat .s { color: var(--text-3); font-size: 0.85rem; }
+  .stat .v { font-family: var(--mono); font-weight: 700; font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.2; margin: 4px 0 0; color: var(--c, var(--accent)); text-shadow: 0 0 24px color-mix(in srgb, var(--c, var(--accent)) 35%, transparent); }
+  .stat .s { color: var(--text-3); font-size: 0.8rem; }
 
-  .race { margin: 26px 0 0; }
+  .race { margin: 14px 0 0; }
   .race-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; margin-bottom: 4px; }
   .race-head .sec-label { margin: 0; }
-  .lane { display: grid; grid-template-columns: minmax(170px, 220px) 1fr minmax(120px, 150px); gap: 8px 18px; align-items: center; padding: 16px 0; border-top: 1px solid var(--border); }
+  .lane { display: grid; grid-template-columns: minmax(140px, 180px) 1fr minmax(96px, 120px); gap: 4px 14px; align-items: center; padding: 9px 0; border-top: 1px solid var(--border); }
   .lane:last-child { border-bottom: 1px solid var(--border); }
   .lane .who { display: flex; gap: 10px; align-items: flex-start; }
   .lane .who b { display: block; font-weight: 600; }
-  .lane .who small { display: block; color: var(--text-3); font-size: 0.85rem; line-height: 1.3; }
-  .track { height: 14px; border-radius: 7px; background: var(--field); border: 1px solid var(--border); position: relative; overflow: hidden; }
+  .lane .who small { display: block; color: var(--text-3); font-size: 0.78rem; line-height: 1.25; }
+  .track { height: 12px; border-radius: 7px; background: var(--field); border: 1px solid var(--border); position: relative; overflow: hidden; }
   .fill {
     position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 7px;
     background: linear-gradient(90deg, color-mix(in srgb, var(--c) 35%, transparent), var(--c));
@@ -212,12 +225,12 @@
   }
   .fill.dashed { background: repeating-linear-gradient(90deg, var(--c) 0 10px, transparent 10px 16px); box-shadow: none; opacity: 0.8; }
   .lane .when { text-align: right; }
-  .lane .when b { font-family: var(--mono); font-size: 1.05rem; display: block; }
-  .lane .when small { color: var(--text-3); font-size: 0.85rem; }
-  .lane .meta { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.9rem; color: var(--text-2); margin-top: -2px; }
+  .lane .when b { font-family: var(--mono); font-size: 0.95rem; display: block; }
+  .lane .when small { color: var(--text-3); font-size: 0.78rem; }
+  .lane .meta { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.85rem; color: var(--text-2); margin-top: -2px; }
   .lane .meta .num { font-family: var(--mono); }
   .lane .na { grid-column: 2 / -1; color: var(--text-2); font-size: 0.95rem; }
-  .tag { font-family: var(--mono); font-size: 12px; padding: 2px 8px; border-radius: 6px; border: 1px solid; white-space: nowrap; }
+  .tag { font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 6px; border: 1px solid; white-space: nowrap; }
   .tag.better { color: var(--green); border-color: rgba(0, 229, 160, 0.4); background: rgba(0, 229, 160, 0.07); }
   .tag.worse { color: var(--red); border-color: rgba(255, 92, 122, 0.4); background: rgba(255, 92, 122, 0.07); }
   .tag.same { color: var(--text-2); border-color: var(--border-hi); }
@@ -226,7 +239,7 @@
   .key.dashed { border-top-style: dashed; }
   .key.wide { border-top-width: 6px; opacity: 0.65; }
   .verdict {
-    margin: 22px 0 0; padding: 16px 18px; border-radius: 12px;
+    margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; font-size: 0.92rem;
     background: rgba(0, 212, 255, 0.05); border: 1px solid rgba(0, 212, 255, 0.25); color: var(--text);
   }
   .verdict:empty { display: none; }
@@ -239,18 +252,18 @@
   .sub { display: block; font-weight: 400; color: var(--text-3); font-size: 0.85rem; }
 
   /* ── Breakdown ── */
-  .breakdown { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 10px; }
-  .bd { background: var(--field); border: 1px solid var(--border); border-radius: 12px; padding: 18px; border-top: 2px solid var(--c); }
+  .breakdown { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin-top: 8px; }
+  .bd { background: var(--field); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; border-top: 2px solid var(--c); }
   .bd h3 { margin: 0 0 10px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); }
-  .bd-row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px dashed var(--border); }
-  .bd-row .num { font-family: var(--mono); font-weight: 600; }
+  .bd-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px dashed var(--border); font-size: 0.9rem; }
+  .bd-row .num { font-family: var(--mono); font-weight: 600; white-space: nowrap; }
   .bd-row .num.save { color: var(--green); }
   .bd-row .num.cost { color: var(--red); }
   .bd-row.total { border-bottom: 0; font-weight: 700; padding-top: 10px; }
   .formula { font-family: var(--mono); color: var(--accent); background: var(--field); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
 
   /* ── Chart ── */
-  .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 4px 0 10px; color: var(--text-2); font-size: 0.9rem; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 2px 0 6px; color: var(--text-2); font-size: 0.82rem; }
   .legend span { display: inline-flex; align-items: center; gap: 8px; }
   .legend .key { margin-top: 0; }
   .chart { position: relative; }
@@ -272,27 +285,28 @@
 
   /* ── Tables ── */
   table { border-collapse: collapse; width: 100%; }
-  th, td { text-align: left; padding: 11px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
   thead th { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-3); font-weight: 600; }
   tbody th { font-weight: 600; }
-  td { font-family: var(--mono); font-size: 0.95rem; }
+  td { font-family: var(--mono); font-size: 0.85rem; }
+  tbody th { font-size: 0.9rem; }
   td .sub { font-family: var(--sans); }
   td.r, th.r { text-align: right; }
   .table-wrap { overflow-x: auto; }
 
   /* ── Catch & learn ── */
-  .risks { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-  .risks li { background: var(--field); border: 1px solid var(--border); border-left: 3px solid var(--amber); border-radius: 10px; padding: 12px 14px; color: var(--text-2); }
-  .risks li strong { display: block; color: var(--text); margin-bottom: 2px; }
+  .risks { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  .risks li { background: var(--field); border: 1px solid var(--border); border-left: 3px solid var(--amber); border-radius: 8px; padding: 7px 12px; color: var(--text-2); font-size: 0.88rem; line-height: 1.4; }
+  .risks li strong { color: var(--text); }
   ul.plain { padding-left: 1.2em; margin: 0; }
   ul.plain li { margin: 0 0 10px; }
   .faq details { border-top: 1px solid var(--border); margin: 0; }
   .faq details:last-of-type { border-bottom: 1px solid var(--border); }
-  .faq summary { color: var(--text); font-family: var(--sans); font-size: 1rem; letter-spacing: 0; text-transform: none; padding: 6px 0; }
+  .faq summary { color: var(--text); font-family: var(--sans); font-size: 0.95rem; letter-spacing: 0; text-transform: none; padding: 2px 0; }
   .faq summary::before { color: var(--accent); }
-  .faq .a { padding: 0 0 14px 34px; color: var(--text-2); }
+  .faq .a { padding: 0 0 12px 34px; color: var(--text-2); font-size: 0.92rem; }
 
-  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
   button {
     font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em;
     min-height: 44px; padding: 0 16px; border-radius: 10px; cursor: pointer;
@@ -303,11 +317,31 @@
   button.primary { background: var(--accent); color: #041018; border-color: var(--accent); font-weight: 700; box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
   .status { color: var(--green); align-self: center; font-size: 0.9rem; font-family: var(--mono); }
 
-  footer { color: var(--text-3); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 36px; padding-top: 18px; }
+  footer { color: var(--text-3); font-size: 0.8rem; border-top: 1px solid var(--border); margin-top: 20px; padding-top: 12px; }
 
   @media (max-width: 640px) {
-    .hero { padding-top: 36px; }
-    .card { padding: 18px; border-radius: 14px; }
+    body { font-size: 14px; }
+    .hero { padding-top: 18px; }
+    .pills { display: none; }
+    .card { padding: 14px; border-radius: 12px; }
+    .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 12px; }
+    .field label { font-size: 11px; letter-spacing: 0.06em; }
+    .field .hint { display: none; }
+    .input span { padding: 0 8px; }
+    .input input:first-child { padding-left: 10px; }
+    .derived { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+    .derived .chip:nth-child(3) { grid-column: 1 / -1; }
+    .chip .k { font-size: 10px; }
+    .chip .v { font-size: 0.95rem; }
+    .stats { grid-template-columns: 1fr; gap: 6px; }
+    .stat { display: grid; grid-template-columns: 1fr auto; align-items: baseline; padding: 8px 12px; }
+    .stat .v { margin: 0; font-size: 1.15rem; grid-column: 2; grid-row: 1; }
+    .stat .s { display: none; }
+    .lane .who small { display: none; }
+    .lane { padding: 8px 0; }
+    .headline { font-size: 1.6rem; }
+    .race-head .fine, table.stack tbody th .sub, #why > .fine { display: none; }
+    .risks li { font-size: 0.85rem; padding: 6px 10px; }
     .lane { grid-template-columns: 1fr auto; }
     .lane .track { grid-column: 1 / -1; grid-row: 2; }
     .lane .meta, .lane .na { grid-column: 1 / -1; }
@@ -349,7 +383,7 @@
     <div class="glow b" aria-hidden="true"></div>
     <p class="eyebrow">Mortgage payoff · straight math</p>
     <h1>What actually pays off your mortgage <em>faster?</em></h1>
-    <p class="lede">Extra payments, a HELOC (“velocity banking”), or an all-in-one loan. Same paycheck, same bills, four different routes. Plug in your numbers and watch them race.</p>
+    <p class="lede">Extra payments, a HELOC (“velocity banking”), or an all-in-one loan: same paycheck, same bills, different routes. Plug in your numbers and watch them race.</p>
     <div class="pills">
       <span class="pill c"><span aria-hidden="true">✓</span> Same money in every scenario</span>
       <span class="pill g"><span aria-hidden="true">✓</span> Real daily-interest math</span>
@@ -358,6 +392,7 @@
     <p class="fine">A homeowner's personal project, shared as-is. Educational estimates, not financial, tax, or legal advice.</p>
   </header>
 
+  <div class="row two top">
   <section class="card" aria-labelledby="h-inputs">
     <p class="sec-label"><b>01</b> // your numbers</p>
     <h2 id="h-inputs">Start with what you've got</h2>
@@ -366,6 +401,7 @@
       <div class="field">
         <label for="balance">Mortgage balance</label>
         <div class="input"><span>$</span><input id="balance" name="balance" inputmode="decimal" autocomplete="off"></div>
+        <input type="range" data-for="balance" min="0" max="1500000" step="5000" aria-label="Mortgage balance slider">
       </div>
       <div class="field">
         <label for="rate">Mortgage interest rate</label>
@@ -380,18 +416,19 @@
       <div class="field">
         <label for="homeValue">Home value</label>
         <div class="input"><span>$</span><input id="homeValue" name="homeValue" inputmode="decimal" autocomplete="off"></div>
+        <input type="range" data-for="homeValue" min="0" max="2500000" step="5000" aria-label="Home value slider">
       </div>
       <div class="field">
         <label for="income">Monthly take-home pay</label>
         <div class="input"><span>$</span><input id="income" name="income" inputmode="decimal" autocomplete="off" aria-describedby="income-hint"></div>
         <input type="range" data-for="income" min="0" max="30000" step="100" aria-label="Monthly take-home pay slider">
-        <span class="hint" id="income-hint">After taxes and deductions, everyone in the household combined.</span>
+        <span class="hint" id="income-hint">After taxes, whole household combined.</span>
       </div>
       <div class="field">
         <label for="spending">Monthly spending</label>
         <div class="input"><span>$</span><input id="spending" name="spending" inputmode="decimal" autocomplete="off" aria-describedby="spending-hint"></div>
         <input type="range" data-for="spending" min="0" max="30000" step="100" aria-label="Monthly spending slider">
-        <span class="hint" id="spending-hint">Everything except mortgage principal &amp; interest: property tax, insurance, bills, groceries, car and other debt payments. Be honest with yourself; check your last 3 months of statements.</span>
+        <span class="hint" id="spending-hint">Everything except mortgage principal &amp; interest, including tax, insurance and other debts. Check 3 months of statements.</span>
       </div>
     </form>
     <div class="derived num" id="derived" aria-live="polite"></div>
@@ -477,7 +514,7 @@
     </div>
   </section>
 
-  <section class="card glowing" aria-labelledby="h-answer" id="answer">
+  <section class="card glowing sticky" aria-labelledby="h-answer" id="answer">
     <p class="sec-label"><b>02</b> // your answer</p>
     <h2 id="h-answer" class="headline"></h2>
     <p id="answer-sub" class="answer-sub"></p>
@@ -490,10 +527,13 @@
     <p id="verdict" class="verdict"></p>
   </section>
 
+  </div>
+
+  <div class="row two">
   <section class="card" aria-labelledby="h-why" id="why">
     <p class="sec-label"><b>03</b> // the higher-rate question</p>
     <h2 id="h-why">How can a higher rate come out close?</h2>
-    <p>Interest is <span class="formula">rate × balance × time</span>. A HELOC or all-in-one loan charges only on what you owe that day. When your paycheck lands, the balance drops right away and stays lower until bills go out. That's a real saving, but a small one. Anything you borrowed at the higher rate costs more every day. The winner is whichever effect is bigger:</p>
+    <p>Interest is <span class="formula">rate × balance × time</span>. When your paycheck lands in a HELOC or all-in-one loan, the balance drops until bills go out, which is a small saving. But everything you borrowed at the higher rate costs more every day. Whichever effect is bigger wins:</p>
     <div class="breakdown" id="breakdown"></div>
     <p class="fine" style="margin-top:14px">The speed itself comes from your leftover cash, which extra payments use just as well. A HELOC or all-in-one loan changes how that cash moves, which is why the gap is usually small.</p>
   </section>
@@ -510,11 +550,18 @@
     </details>
   </section>
 
+  </div>
+
   <section class="card" aria-labelledby="h-catch">
     <p class="sec-label"><b>05</b> // what's the catch</p>
     <h2 id="h-catch">Stress-test it before you trust it</h2>
     <div id="rate-note"></div>
+    <div class="catch-grid">
+    <div>
+    <h3>If things change</h3>
     <div class="table-wrap"><table id="stress" class="num stack"></table></div>
+    </div>
+    <div>
     <h3>Risks to understand first</h3>
     <ul class="risks">
       <li><strong>Your home secures all of these loans.</strong> Fall behind on a HELOC or all-in-one loan and you can face foreclosure, just like with a mortgage.</li>
@@ -525,11 +572,14 @@
       <li><strong>Draw periods end.</strong> Many HELOCs let you borrow for about 10 years. After that, the line stops working as an account and required payments jump.</li>
       <li><strong>Extra payments have a catch too.</strong> Money you prepay is locked in the house; you can't get it back without selling or borrowing. Keep an emergency fund before prepaying anything.</li>
     </ul>
+    </div>
+    </div>
   </section>
 
   <section class="card faq" aria-labelledby="h-learn">
     <p class="sec-label"><b>06</b> // learn more</p>
     <h2 id="h-learn">The fine print, in plain English</h2>
+    <div class="faq-cols">
     <details>
       <summary>How each method works</summary>
       <div class="a">
@@ -589,6 +639,7 @@
         <li>Your numbers stay in your browser. Nothing is sent anywhere.</li>
       </ul></div>
     </details>
+    </div>
   </section>
 
   <footer>
