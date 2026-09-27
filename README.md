@@ -1,6 +1,6 @@
 # Mortgage Payoff Comparison
 
-A single-page calculator that compares four ways to pay off a mortgage using the
+A calculator (four tabs: Compare, Chart, Why & risks, Learn) that compares four ways to pay off a mortgage using the
 **same money coming in and going out**:
 
 1. **Current schedule** – pay the required payment only.
