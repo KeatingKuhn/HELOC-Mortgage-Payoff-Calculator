@@ -445,7 +445,7 @@
     const host = $("chart");
     const width = Math.max(300, host.clientWidth || 600);
     const small = width < 520;
-    const height = small ? 240 : 300;
+    const height = small ? 220 : 260;
     const pad = { l: small ? 44 : 56, r: 14, t: 10, b: 28 };
     const maxX = Math.max(...series.map((d) => d.data.length - 1), 12);
     const maxY = Math.max(...series.map((d) => Math.max(...d.data)), 1);
