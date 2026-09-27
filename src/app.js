@@ -28,6 +28,8 @@
   const MONEY = ["balance", "homeValue", "income", "spending", "payment", "helocLimit", "chunk", "helocAnnualFee", "aioCost"];
   const SELECTS = ["payStrategy", "spendTiming"];
   const STORAGE_KEY = "payoff_v2";
+  const TABS = ["compare", "chart", "risks", "learn"];
+  let currentTab = "compare";
 
   const METHODS = [
     { key: "standard", name: "Current schedule", sub: "Required payment only", color: "var(--s-std)", dashed: true },
@@ -154,6 +156,7 @@
   }
   function toParams(state) {
     const p = new URLSearchParams();
+    if (currentTab !== "compare") p.set("tab", currentTab);
     for (const [k, v] of Object.entries(state)) if (v !== "" && v != null && !Number.isNaN(v)) p.set(k, v);
     return p.toString();
   }
@@ -213,36 +216,42 @@
     const answer = $("answer");
     if (problems.length) {
       $("derived").replaceChildren();
-      answer.querySelector(".headline").textContent = "Fill in your numbers to see the comparison";
-      $("answer-sub").replaceChildren(h("ul", { class: "plain" }, problems.slice(0, 4).map((p) => h("li", null, p))));
-      for (const id of ["answer-warn", "verdict", "stats", "race", "breakdown", "legend", "chart", "chart-note", "by-year", "stress", "rate-note"]) $(id).replaceChildren();
+      $("headline").textContent = "Check your numbers";
+      $("answer-sub").replaceChildren(h("ul", null, problems.slice(0, 4).map((p) => h("li", null, p))));
+      $("answer-warn").hidden = true;
+      $("compare-table").tBodies[0].replaceChildren();
+      $("mini").className = "mini";
+      for (const id of ["verdict", "summary", "breakdown", "legend", "chart", "chart-note", "by-year", "stress", "rate-note"]) $(id).replaceChildren();
+      lastResult = null;
       return;
     }
 
     const input = toEngineInput(state);
     const r = E.run(input);
     const p = r.inputs;
+    lastResult = r;
     renderDerived(p, state);
     renderAnswer(r);
     renderBreakdown(r);
-    renderChart(r);
+    if (currentTab === "chart") renderChart(r);
     renderByYear(r);
     renderStress(input, r);
     renderRateNote(p);
   }
+  let lastResult = null;
 
   function renderDerived(p, state) {
     const firstInterest = (p.balance * p.rate) / 100 / 12;
-    const chip = (k, v, cls) => h("div", { class: "chip" }, h("span", { class: "k" }, k), h("span", { class: "v " + (cls || "") }, v));
+    const line = (label, value, cls) => h("p", null, h("span", null, label), h("span", { class: "num " + (cls || "") }, value));
     const items = [
-      chip(state.payment === "" ? "Principal & interest (calc.)" : "Principal & interest", fmt$(p.payment) + "/mo"),
-      chip("Left over each month", fmt$(p.leftover), p.leftover > 0 ? "fuel" : "bad"),
-      chip("Equity a HELOC could use", fmt$(E.availableEquity(p))),
+      line(state.payment === "" ? "Principal & interest (calculated)" : "Principal & interest", fmt$(p.payment) + "/mo"),
+      line("Left over each month", fmt$(p.leftover), p.leftover > 0 ? "good" : "bad"),
+      line("Equity a HELOC could use", fmt$(E.availableEquity(p))),
     ];
     if (state.payment !== "" && p.payment <= firstInterest) {
-      items.push(h("div", { class: "chip note bad" }, `That payment doesn't cover the ${fmt$(firstInterest)} of monthly interest.`));
+      items.push(h("span", { class: "note bad" }, `That payment doesn't cover the ${fmt$(firstInterest)} of monthly interest.`));
     } else if (state.payment !== "" && Math.abs(p.payment - p.scheduledPayment) / p.scheduledPayment > 0.05) {
-      items.push(h("div", { class: "chip note" }, `Heads up: a ${fmtPct(p.rate)} loan paid off in ${duration(p.termMonths)} needs ${fmt$(p.scheduledPayment)}/mo. Check years left.`));
+      items.push(h("span", { class: "note" }, `A ${fmtPct(p.rate)} loan paid off in ${duration(p.termMonths)} needs ${fmt$(p.scheduledPayment)}/mo. Check years left.`));
     }
     $("derived").replaceChildren(...items);
   }
@@ -269,33 +278,72 @@
     const p = r.inputs;
     const std = r.standard;
     const extra = r.extra;
-    const headline = $("answer").querySelector(".headline");
     const warn = $("answer-warn");
-    warn.replaceChildren();
+    warn.hidden = true;
+    const mini = $("mini");
 
     if (p.leftover <= 0) {
-      headline.replaceChildren("No leftover cash, ", h("em", null, "no shortcut."));
+      $("headline").replaceChildren("No leftover cash, ", h("em", null, "no shortcut."));
       $("answer-sub").textContent =
         `Pay minus spending minus the ${fmt$(p.payment)} mortgage payment is ${fmt$(p.leftover)} a month. ` +
-        "Extra payments, a HELOC and an all-in-one loan all need leftover cash to work. With none, a HELOC or all-in-one balance grows instead of shrinking.";
-      $("stats").replaceChildren();
+        "Every method needs leftover cash to work. With none, a HELOC or all-in-one balance grows instead of shrinking.";
+      $("summary").replaceChildren();
+      mini.className = "mini";
     } else {
-      headline.replaceChildren("Debt-free by ", h("em", null, dateAfter(p, extra.months)), ".");
-      $("answer-sub").textContent =
-        `That speed comes from sending your ${fmt$(p.leftover)} a month of leftover cash at the debt. ` +
-        "Every route below uses the same money; they differ in cost, flexibility and risk.";
+      $("headline").replaceChildren("Debt-free by ", h("em", null, dateAfter(p, extra.months)));
+      $("answer-sub").textContent = `That's what your ${fmt$(p.leftover)} a month of leftover cash does. All four methods below use that same money.`;
+      const item = (k, v, cls) => h("div", null, h("span", { class: "k" }, k), h("span", { class: "v " + (cls || "") }, v));
+      $("summary").replaceChildren(
+        item("Sooner than your schedule", duration(std.months - extra.months), "cyan"),
+        item("Interest avoided", fmt$(std.cost - extra.cost), "green"),
+        item("Left over each month", fmt$(p.leftover))
+      );
       if (p.leftover < p.income * 0.1) {
-        warn.append(
-          h("div", { class: "warn" }, h("strong", null, "Thin margin. "), `Your leftover is ${Math.round((p.leftover / p.income) * 100)}% of pay. One surprise expense could push a HELOC or all-in-one balance up instead of down.`)
-        );
+        warn.textContent = `Thin margin: your leftover is ${Math.round((p.leftover / p.income) * 100)}% of pay. One surprise expense could push a HELOC or all-in-one balance up instead of down.`;
+        warn.hidden = false;
       }
-      renderStats([
-        { k: "Time saved", v: std.months - extra.months, f: duration, s: `vs. ${dateAfter(p, std.months)} on schedule`, c: "var(--accent)" },
-        { k: "Interest avoided", v: std.cost - extra.cost, f: fmt$, s: "vs. the current schedule", c: "var(--green)" },
-        { k: "Your fuel", v: p.leftover, f: (n) => fmt$(n) + "/mo", s: "left over after bills", c: "var(--amber)" },
-      ]);
+      mini.replaceChildren(h("span", null, "Debt-free by ", h("b", null, dateAfter(p, extra.months))), h("span", null, duration(std.months - extra.months) + " sooner"));
+      mini.className = "mini" + (currentTab === "compare" ? " show" : "");
     }
-    renderRace(r);
+
+    const finite = METHODS.map((m) => r[m.key]).filter((x) => !x.unavailable && !x.neverPaysOff).map((x) => x.months);
+    const maxMonths = Math.max(...finite, 1);
+    const tbody = $("compare-table").tBodies[0];
+    const oldBars = {};
+    tbody.querySelectorAll(".bar i").forEach((b) => (oldBars[b.dataset.key] = b.style.width));
+    tbody.replaceChildren(
+      ...METHODS.map((m) => {
+        const res = r[m.key];
+        const swatch = h("span", { class: "swatch" + (m.dashed ? " dashed" : ""), style: `border-color:${m.color}`, "aria-hidden": "true" });
+        const nameCell = h("th", { scope: "row" }, h("span", { class: "method" }, swatch, h("span", null, m.name, h("span", { class: "sub" }, m.sub))));
+        if (res.unavailable) {
+          return h("tr", null, nameCell, h("td", { colspan: 3, class: "unavail" }, unavailableText(m.key, res, r)));
+        }
+        const pct = res.neverPaysOff ? 100 : (res.months / maxMonths) * 100;
+        const fill = h("i", { class: m.dashed ? "dashed" : "", "data-key": m.key, style: `--c:${m.color};width:${oldBars[m.key] || "0%"}` });
+        requestAnimationFrame(() => requestAnimationFrame(() => (fill.style.width = pct.toFixed(2) + "%")));
+        const when = h(
+          "td",
+          { class: "barcell", "data-label": "Debt-free" },
+          res.neverPaysOff
+            ? h("span", { class: "num worse" }, "Never")
+            : h("span", { class: "num" }, dateAfter(p, res.months), h("span", { class: "sub" }, duration(res.months))),
+          h("div", { class: "bar", "aria-hidden": "true" }, fill)
+        );
+        const cost = h("td", { class: "r num", "data-label": "Interest & fees" }, res.neverPaysOff ? "—" : fmt$(res.cost));
+        let vs;
+        const at = { "data-label": "vs. extra payments" };
+        if (m.key === "extra") vs = h("td", Object.assign({ class: "r same" }, at), "benchmark");
+        else if (res.neverPaysOff || extra.neverPaysOff) vs = h("td", Object.assign({ class: "r same" }, at), "—");
+        else {
+          const diff = res.cost - extra.cost;
+          const tol = Math.max(500, extra.cost * 0.01);
+          const cls = Math.abs(diff) <= tol ? "same" : diff < 0 ? "better" : "worse";
+          vs = h("td", Object.assign({ class: "r num " + cls }, at), Math.abs(diff) < 1 ? "same" : moreLess(diff));
+        }
+        return h("tr", null, nameCell, when, cost, vs);
+      })
+    );
 
     const lines = [];
     if (p.leftover > 0) {
@@ -303,78 +351,9 @@
         const v = verdictFor(k, r[k], extra, r[k + "Breakdown"], p);
         if (v) lines.push(v);
       }
-      lines.push("Neither one gets you there meaningfully faster. What you'd be paying for, or saving on, is access to your money, not speed.");
+      lines.push("Neither gets you there meaningfully faster; what you'd pay for, or save on, is access to your money.");
     }
-    $("verdict").textContent = lines.join(" ");
-  }
-
-  // Big numbers count from their previous value to the new one.
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  function renderStats(items) {
-    const host = $("stats");
-    const old = Array.from(host.children).map((el) => Number(el.dataset.value));
-    host.replaceChildren(
-      ...items.map((it, i) => {
-        const v = h("div", { class: "v num" }, it.f(it.v));
-        const tile = h("div", { class: "stat", style: `--c:${it.c}`, "data-value": it.v }, h("div", { class: "k" }, it.k), v, h("div", { class: "s" }, it.s));
-        const from = isFinite(old[i]) ? old[i] : 0;
-        if (!reduceMotion && from !== it.v) countUp(v, from, it.v, it.f);
-        return tile;
-      })
-    );
-  }
-  function countUp(el, from, to, f) {
-    const t0 = performance.now();
-    const dur = 700;
-    const step = (t) => {
-      const k = Math.min(1, (t - t0) / dur);
-      const e = 1 - Math.pow(1 - k, 3);
-      el.textContent = f(Math.round(from + (to - from) * e));
-      if (k < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }
-
-  function renderRace(r) {
-    const p = r.inputs;
-    const extra = r.extra;
-    const finite = METHODS.map((m) => r[m.key]).filter((x) => !x.unavailable && !x.neverPaysOff).map((x) => x.months);
-    const maxMonths = Math.max(...finite, 1);
-    const host = $("race");
-    const oldFills = {};
-    host.querySelectorAll(".fill").forEach((f) => (oldFills[f.dataset.key] = f.style.width));
-    const lanes = METHODS.map((m) => {
-      const res = r[m.key];
-      const key = h("span", { class: "key" + (m.dashed ? " dashed" : "") + (m.wide ? " wide" : ""), style: `border-color:${m.color}`, "aria-hidden": "true" });
-      const who = h("div", { class: "who" }, key, h("div", null, h("b", null, m.name), h("small", null, m.sub)));
-      if (res.unavailable) {
-        return h("div", { class: "lane", role: "listitem" }, who, h("div", { class: "na" }, unavailableText(m.key, res, r)));
-      }
-      const pct = res.neverPaysOff ? 100 : (res.months / maxMonths) * 100;
-      const fill = h("div", { class: "fill" + (m.dashed ? " dashed" : ""), "data-key": m.key, style: `--c:${m.color};width:${oldFills[m.key] || "0%"}` });
-      requestAnimationFrame(() => requestAnimationFrame(() => (fill.style.width = pct.toFixed(2) + "%")));
-      const track = h("div", { class: "track", "aria-hidden": "true" }, fill);
-      const when = res.neverPaysOff
-        ? h("div", { class: "when" }, h("b", { class: "worse" }, "Never"), h("small", null, "balance doesn't fall"))
-        : h("div", { class: "when" }, h("b", null, dateAfter(p, res.months)), h("small", null, duration(res.months)));
-      let tag;
-      if (m.key === "extra") tag = h("span", { class: "tag base" }, "the benchmark");
-      else if (res.neverPaysOff || extra.neverPaysOff) tag = null;
-      else {
-        const diff = res.cost - extra.cost;
-        const tol = Math.max(500, extra.cost * 0.01);
-        const cls = Math.abs(diff) <= tol ? "same" : diff < 0 ? "better" : "worse";
-        tag = h("span", { class: "tag " + cls }, Math.abs(diff) < 1 ? "same as extra payments" : `${moreLess(diff)} than extra payments`);
-      }
-      const meta = h(
-        "div",
-        { class: "meta" },
-        res.neverPaysOff ? null : h("span", null, "Interest & fees ", h("strong", { class: "num" }, fmt$(res.cost))),
-        tag
-      );
-      return h("div", { class: "lane", role: "listitem" }, who, track, when, meta);
-    });
-    host.replaceChildren(...lanes);
+    $("verdict").replaceChildren(lines.length ? h("strong", null, "Bottom line: ") : "", lines.join(" "));
   }
 
   function unavailableText(key, res, r) {
@@ -393,36 +372,44 @@
 
   function renderBreakdown(r) {
     const p = r.inputs;
-    const cards = [];
+    const blocks = [];
     for (const [key, title, rateLabel] of [
       ["heloc", "HELOC chunking", p.helocRate],
       ["aio", "All-in-one loan", p.aioRate],
     ]) {
       const res = r[key];
       const bd = r[key + "Breakdown"];
-      const body = [h("h3", null, `${title} @ ${fmtPct(rateLabel)}`)];
+      const body = [h("h3", null, `${title} at ${fmtPct(rateLabel)}`)];
       if (!bd) {
         body.push(h("p", { class: "same" }, res.unavailable ? unavailableText(key, res, r) : "Doesn't pay off with these numbers, so there's nothing to compare."));
       } else {
-        const row = (label, value, cls, total) => h("div", { class: "bd-row" + (total ? " total" : "") }, h("span", null, label), h("span", { class: "num " + (cls || "") }, value));
         const signed = (n) => (n < 0 ? "−" + fmt$(-n) : "+" + fmt$(n));
-        const tone = (n) => (n < -0.5 ? "save" : n > 0.5 ? "cost" : "");
+        const tone = (n) => (n < -0.5 ? "better" : n > 0.5 ? "worse" : "");
+        const row = (label, value, cls, total) => h("tr", { class: total ? "total" : "" }, h("td", null, label), h("td", { class: cls }, value));
         const rateWord = rateLabel >= p.rate ? "Higher" : "Lower";
         body.push(
-          row("Pay sitting against the balance", signed(bd.timing), tone(bd.timing)),
-          row(`${rateWord} rate than your ${fmtPct(p.rate)} mortgage`, signed(bd.rateCost), tone(bd.rateCost)),
-          row(key === "aio" ? "Switching costs" : "Fees", signed(bd.fees), tone(bd.fees)),
-          row("Net vs. extra payments", moreLess(bd.net), tone(bd.net), true)
+          h(
+            "table",
+            null,
+            h(
+              "tbody",
+              null,
+              row("Pay sitting against the balance", signed(bd.timing), tone(bd.timing)),
+              row(`${rateWord} rate than your ${fmtPct(p.rate)} mortgage`, signed(bd.rateCost), tone(bd.rateCost)),
+              row(key === "aio" ? "Switching costs" : "Fees", signed(bd.fees), tone(bd.fees)),
+              row("Net vs. extra payments", moreLess(bd.net), tone(bd.net), true)
+            )
+          )
         );
         const facts =
           key === "heloc"
-            ? `${res.chunks} chunks of up to ${fmt$(res.chunkSize)} on a ${fmt$(res.limit)} line. Average HELOC balance: ${fmt$(res.avgLine)}.`
+            ? `${res.chunks} chunks of up to ${fmt$(res.chunkSize)} on a ${fmt$(res.limit)} line. Average HELOC balance ${fmt$(res.avgLine)}.`
             : `Average balance you pay interest on: ${fmt$(res.avgLine)}.`;
-        body.push(h("p", { class: "fine", style: "margin:10px 0 0" }, facts));
+        body.push(h("p", { class: "fine", style: "margin:8px 0 0" }, facts));
       }
-      cards.push(h("div", { class: "bd", style: `--c:${key === "heloc" ? "var(--s-heloc)" : "var(--s-aio)"}` }, body));
+      blocks.push(h("div", null, body));
     }
-    $("breakdown").replaceChildren(...cards);
+    $("breakdown").replaceChildren(...blocks);
   }
 
   // ── Chart: total debt over time ─────────────────────────────────────────
@@ -436,7 +423,7 @@
         h(
           "span",
           null,
-          h("span", { class: "key" + (m.dashed ? " dashed" : "") + (m.wide ? " wide" : ""), style: `border-color:${m.color}`, "aria-hidden": "true" }),
+          h("span", { class: "swatch" + (m.dashed ? " dashed" : ""), style: `border-color:${m.color}`, "aria-hidden": "true" }),
           `${m.name}: ${res.neverPaysOff ? "never" : dateAfter(p, res.months)}`
         )
       )
@@ -445,7 +432,7 @@
     const host = $("chart");
     const width = Math.max(300, host.clientWidth || 600);
     const small = width < 520;
-    const height = small ? 220 : 260;
+    const height = small ? 240 : Math.min(380, Math.round(width * 0.42));
     const pad = { l: small ? 44 : 56, r: 14, t: 10, b: 28 };
     const maxX = Math.max(...series.map((d) => d.data.length - 1), 12);
     const maxY = Math.max(...series.map((d) => Math.max(...d.data)), 1);
@@ -532,7 +519,7 @@
           return h(
             "div",
             { class: "t-row" },
-            h("span", { class: "key" + (d.m.dashed ? " dashed" : "") + (d.m.wide ? " wide" : ""), style: `border-color:${d.m.color}` }),
+            h("span", { class: "swatch" + (d.m.dashed ? " dashed" : ""), style: `border-color:${d.m.color}` }),
             h("span", null, d.m.name),
             h("strong", null, v == null ? "—" : fmt$(v))
           );
@@ -589,7 +576,7 @@
           cols.map((m) => {
             const d = r[m.key].series;
             const v = month < d.length ? d[month] : r[m.key].neverPaysOff ? null : 0;
-            return h("td", { class: "r" }, v == null ? "—" : fmt$(v));
+            return h("td", { class: "r num" }, v == null ? "—" : fmt$(v));
           })
         )
       );
@@ -620,7 +607,7 @@
         h(
           "span",
           null,
-          dateAfter(p, res.months),
+          h("span", { class: "num" }, dateAfter(p, res.months)),
           h("span", { class: "sub" }, `${dm > 0 ? "+" + duration(dm) : dm < 0 ? "−" + duration(-dm) : "same date"} · ${dc >= 0 ? "+" : "−"}${fmt$(Math.abs(dc))}`)
         )
       );
@@ -631,7 +618,7 @@
       ["Spending rises 10%", `${fmt$(p.spending * 1.1)}/mo instead of ${fmt$(p.spending)}`, st.spendingUp10],
     ];
     $("stress").replaceChildren(
-      h("thead", null, h("tr", null, h("th", { scope: "col" }, "What if"), cols.map(([, n]) => h("th", { scope: "col" }, n)))),
+      h("thead", null, h("tr", null, h("th", { scope: "col" }, "What if…"), cols.map(([, n]) => h("th", { scope: "col" }, n)))),
       h(
         "tbody",
         null,
@@ -646,8 +633,8 @@
     if (p.rate < 4.5) {
       note.append(
         h(
-          "div",
-          { class: "warn" },
+          "p",
+          { class: "warn", style: "margin:0 0 12px" },
           h("strong", null, `Your mortgage rate is ${fmtPct(p.rate)}. `),
           `Every extra dollar you put toward it earns exactly ${fmtPct(p.rate)}, guaranteed. ` +
             "Moving that debt to a HELOC or all-in-one loan at a higher variable rate usually costs more, and money in savings or investments may earn more than the mortgage costs."
@@ -677,29 +664,45 @@
   );
   form.addEventListener("submit", (e) => e.preventDefault());
 
-  // Sliders mirror their text field; dragging one updates the answer live.
-  const sliders = Array.from(document.querySelectorAll('input[type="range"][data-for]'));
-  function paintSlider(r) {
-    const pct = ((r.value - r.min) / (r.max - r.min)) * 100;
-    r.style.setProperty("--pct", pct + "%");
-  }
-  function syncSliders() {
-    for (const r of sliders) {
-      const n = parseNum($(r.dataset.for).value);
-      if (n != null && isFinite(n)) r.value = Math.min(Number(r.max), Math.max(Number(r.min), n));
-      paintSlider(r);
+  // ── Tabs ──
+  function showTab(name, focus) {
+    if (!TABS.includes(name)) name = "compare";
+    currentTab = name;
+    for (const t of TABS) {
+      const btn = $("tab-" + t);
+      const on = t === name;
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+      btn.tabIndex = on ? 0 : -1;
+      $("page-" + t).hidden = !on;
     }
+    if (focus) $("tab-" + name).focus();
+    $("mini").classList.toggle("show", name === "compare" && lastResult && lastResult.inputs.leftover > 0);
+    if (name === "chart" && lastResult) renderChart(lastResult);
+    saveState(readForm());
   }
-  for (const r of sliders) {
-    r.addEventListener("input", () => {
-      const target = $(r.dataset.for);
-      target.value = formatField(target.id, Number(r.value));
-      paintSlider(r);
-      schedule();
+  document.querySelectorAll(".tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      showTab(btn.dataset.tab);
+      window.scrollTo({ top: 0 });
     });
-  }
-  document.addEventListener("input", (e) => {
-    if (e.target instanceof HTMLInputElement && e.target.type !== "range") syncSliders();
+    btn.addEventListener("keydown", (e) => {
+      const i = TABS.indexOf(btn.dataset.tab);
+      if (e.key === "ArrowRight") showTab(TABS[(i + 1) % TABS.length], true);
+      else if (e.key === "ArrowLeft") showTab(TABS[(i + TABS.length - 1) % TABS.length], true);
+      else return;
+      e.preventDefault();
+    });
+  });
+  document.querySelectorAll("[data-goto]").forEach((a) =>
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      showTab(a.dataset.goto);
+      window.scrollTo({ top: 0 });
+    })
+  );
+  document.querySelector(".brand").addEventListener("click", (e) => {
+    e.preventDefault();
+    showTab("compare");
   });
 
   $("copy-link").addEventListener("click", async () => {
@@ -719,7 +722,6 @@
       /* ignore */
     }
     writeForm(DEFAULTS);
-    syncSliders();
     render();
     $("status").textContent = "Reset to the example numbers.";
   });
@@ -727,19 +729,23 @@
   let lastWidth = 0;
   window.addEventListener("resize", () => {
     const w = $("chart").clientWidth;
-    if (Math.abs(w - lastWidth) > 20) {
+    if (currentTab === "chart" && lastResult && Math.abs(w - lastWidth) > 20) {
       lastWidth = w;
-      schedule();
+      renderChart(lastResult);
     }
   });
+  // Read the requested page before render() rewrites the hash.
+  const hashTab = () => new URLSearchParams(location.hash.slice(1)).get("tab") || "compare";
   window.addEventListener("hashchange", () => {
+    const tab = hashTab();
+    currentTab = tab;
     writeForm(loadState());
-    syncSliders();
     render();
+    showTab(tab);
   });
 
+  currentTab = TABS.includes(hashTab()) ? hashTab() : "compare";
   writeForm(loadState());
-  syncSliders();
   render();
-  lastWidth = $("chart").clientWidth;
+  showTab(currentTab);
 })();

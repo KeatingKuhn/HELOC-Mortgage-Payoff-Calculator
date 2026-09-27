@@ -10,33 +10,27 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0e1a'/%3E%3Cpath d='M6 16 16 7l10 9v10H6z' fill='none' stroke='%2300d4ff' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: dark;
     --bg: #0a0e1a;
     --surface: #111827;
-    --surface-2: #1a2235;
+    --surface-2: #172033;
     --field: #0d1424;
     --border: #1e2d45;
     --border-hi: #2c4263;
     --text: #e8f0fe;
     --text-2: #b4c2dc;
-    --text-3: #8899bb;
+    --text-3: #9aabc8;
     --accent: #00d4ff;
-    --accent-glow: rgba(0, 212, 255, 0.14);
     --green: #00e5a0;
-    --red: #ff5c7a;
+    --red: #ff6b85;
     --amber: #ffb700;
-    --good: var(--green);
-    --bad: var(--red);
-    --warn-bg: rgba(255, 183, 0, 0.08);
-    --warn-border: rgba(255, 183, 0, 0.4);
     --s-std: #8899bb;
     --s-extra: #3987e5;
     --s-heloc: #d95926;
     --s-aio: #199e70;
-    --focus: #00d4ff;
     --serif: "DM Serif Display", Georgia, serif;
     --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -44,608 +38,465 @@
 
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font: 15px/1.5 var(--sans);
-  }
-  main { max-width: 1400px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 40px) 40px; position: relative; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--sans); }
   p { margin: 0 0 12px; }
   a { color: var(--accent); }
-  strong { color: var(--text); }
-  .num { font-variant-numeric: tabular-nums; }
-  .mono { font-family: var(--mono); }
-  :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+  strong { font-weight: 600; color: var(--text); }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-  /* ── Hero ── */
-  .hero { position: relative; padding: 28px 0 6px; overflow: hidden; }
-  .hero::before {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background-image:
-      linear-gradient(rgba(0, 212, 255, 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 212, 255, 0.035) 1px, transparent 1px);
-    background-size: 40px 40px;
-    mask-image: radial-gradient(ellipse at 30% 30%, #000 30%, transparent 75%);
-    -webkit-mask-image: radial-gradient(ellipse at 30% 30%, #000 30%, transparent 75%);
+  /* ── Top bar & tabs ── */
+  .topbar { position: sticky; top: 0; z-index: 10; background: rgba(10, 14, 26, 0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+  .topbar-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 32px; min-height: 56px; }
+  .brand { font-family: var(--serif); font-size: 20px; line-height: 1.2; white-space: nowrap; color: var(--text); text-decoration: none; }
+  .brand em { color: var(--accent); }
+  .tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin-left: auto; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    font: 600 14px/1 var(--sans); color: var(--text-2); background: none; border: 0; cursor: pointer;
+    padding: 20px 12px 17px; border-bottom: 3px solid transparent; white-space: nowrap; border-radius: 0;
   }
-  .glow { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(10px); }
-  .glow.a { width: 520px; height: 520px; top: -260px; left: -160px; background: radial-gradient(circle, rgba(0, 212, 255, 0.16), transparent 65%); }
-  .glow.b { width: 420px; height: 420px; top: -120px; right: -180px; background: radial-gradient(circle, rgba(0, 229, 160, 0.10), transparent 65%); }
-  .eyebrow {
-    font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--accent); display: flex; align-items: center; gap: 10px; margin: 0 0 14px;
-  }
-  .eyebrow::before { content: ""; width: 24px; height: 1px; background: currentColor; opacity: 0.7; }
-  h1 {
-    font-family: var(--serif); font-weight: 400; letter-spacing: -0.02em; line-height: 1.08;
-    font-size: clamp(1.8rem, 3.6vw, 2.6rem); margin: 0 0 8px; position: relative;
-  }
-  h1 em, .headline em { font-style: italic; color: var(--accent); text-shadow: 0 0 32px rgba(0, 212, 255, 0.35); }
-  .lede { color: var(--text-2); font-size: 1rem; max-width: 52rem; position: relative; margin-bottom: 8px; }
-  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 6px; position: relative; }
-  .pill {
-    font-family: var(--mono); font-size: 12px; letter-spacing: 0.03em;
-    padding: 4px 10px; border-radius: 999px; border: 1px solid; display: inline-flex; gap: 6px; align-items: center;
-  }
-  .pill.c { color: var(--accent); border-color: rgba(0, 212, 255, 0.35); background: rgba(0, 212, 255, 0.06); }
-  .pill.g { color: var(--green); border-color: rgba(0, 229, 160, 0.35); background: rgba(0, 229, 160, 0.06); }
-  .pill.a { color: var(--amber); border-color: rgba(255, 183, 0, 0.35); background: rgba(255, 183, 0, 0.06); }
-  .fine { color: var(--text-3); font-size: 0.875rem; }
+  .tab:hover { color: var(--text); }
+  .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
 
-  /* ── Cards & section heads ── */
-  .card {
-    background: linear-gradient(180deg, rgba(255,255,255,0.015), transparent 40%), var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px 20px;
-    margin: 14px 0;
-    position: relative;
-  }
-  .card.glowing { border-color: rgba(0, 212, 255, 0.35); box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.08), 0 20px 60px -30px rgba(0, 212, 255, 0.35); }
-  .sec-label { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); margin: 0 0 6px; }
-  .sec-label b { color: var(--accent); font-weight: 600; }
-  h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.25rem, 2.2vw, 1.55rem); letter-spacing: -0.01em; line-height: 1.2; margin: 0 0 10px; }
-  h3 { font-size: 0.95rem; margin: 14px 0 8px; }
-  .row { margin: 14px 0; }
-  .row > .card { margin: 0; }
-  @media (min-width: 1080px) {
-    .row.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
-    .row.top { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); }
-    .sticky { position: sticky; top: 12px; }
-  }
-  .row.two > .card + .card { margin-top: 14px; }
-  @media (min-width: 1080px) { .row.two > .card + .card { margin-top: 0; } }
-  .catch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 8px 28px; }
-  .catch-grid h3 { margin-top: 4px; }
-  .faq-cols { column-width: 420px; column-gap: 32px; }
-  .faq-cols details { break-inside: avoid; }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px 24px 32px; }
+  .page[hidden] { display: none; }
+  .page.narrow { max-width: 880px; margin: 0 auto; }
+  .page.reading { max-width: 720px; margin: 0 auto; }
 
-  /* ── Form ── */
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 18px; }
-  .field label { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); margin-bottom: 4px; }
-  .field .hint { display: block; color: var(--text-3); font-size: 0.8rem; margin-top: 2px; line-height: 1.35; }
-  .input {
-    display: flex; align-items: center;
-    background: var(--field);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    min-height: 42px;
-    transition: border-color .15s, box-shadow .15s;
-  }
-  .input:hover { border-color: var(--border-hi); }
-  .input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-  .input span { color: var(--text-3); padding: 0 12px; font-family: var(--mono); font-size: 14px; }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: 32px; line-height: 1.2; margin: 0 0 8px; }
+  h1 em, .headline em { font-style: italic; color: var(--accent); }
+  h2 { font-size: 20px; font-weight: 600; line-height: 1.3; margin: 0 0 12px; }
+  h3 { font-size: 15px; font-weight: 600; margin: 20px 0 8px; }
+  .lede { color: var(--text-2); font-size: 15px; max-width: 60ch; margin-bottom: 24px; }
+  .fine { color: var(--text-3); font-size: 13px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+  .page > .card + .card { margin-top: 24px; }
+
+  /* ── Compare page ── */
+  .compare { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 32px; align-items: start; }
+  .inputs h2 { margin-bottom: 16px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .field .hint { display: block; font-size: 12px; color: var(--text-3); margin-top: 4px; }
+  .input { display: flex; align-items: center; background: var(--field); border: 1px solid var(--border-hi); border-radius: 8px; height: 40px; }
+  .input:hover { border-color: #3a567f; }
+  .input:focus-within { border-color: var(--accent); }
+  .input span { color: var(--text-3); padding: 0 12px; font-size: 14px; }
   .input input, .input select {
-    flex: 1; min-width: 0;
-    border: 0; background: transparent; color: var(--text);
-    font-family: var(--mono); font-size: 16px; font-weight: 600;
-    padding: 8px 12px 8px 0;
-    outline: none;
+    flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; color: var(--text);
+    font: 400 15px var(--mono); padding: 0 12px 0 0; outline: none;
   }
-  .input select { padding-left: 12px; font-family: var(--sans); font-weight: 500; }
+  .input input:first-child { padding-left: 12px; }
+  .input select { font-family: var(--sans); padding-left: 12px; }
   .input select option { background: var(--surface); }
-  .input input:first-child { padding-left: 14px; }
-  .input input::placeholder { color: var(--text-3); font-weight: 400; }
+  .input input::placeholder { color: var(--text-3); font-family: var(--sans); }
+  .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+  .derived { font-size: 14px; color: var(--text-2); padding: 12px 0 4px; border-top: 1px solid var(--border); margin-top: 4px; }
+  .derived p { margin: 0 0 4px; display: flex; justify-content: space-between; gap: 12px; }
+  .derived .num { color: var(--text); }
+  .derived .good { color: var(--green); }
+  .derived .bad, .derived .note.bad { color: var(--red); }
+  .derived .note { display: block; font-size: 13px; color: var(--amber); margin-top: 6px; }
+  .example-note { font-size: 13px; color: var(--text-3); margin: -8px 0 16px; }
 
-  input[type="range"] {
-    -webkit-appearance: none; appearance: none;
-    width: 100%; height: 24px; margin: 2px 0 0; background: transparent; cursor: pointer;
-    --pct: 50%;
-  }
-  input[type="range"]::-webkit-slider-runnable-track {
-    height: 4px; border-radius: 2px;
-    background: linear-gradient(90deg, var(--accent) var(--pct), var(--border) var(--pct));
-  }
-  input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--border); }
-  input[type="range"]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--accent); }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; margin-top: -8px;
-    background: var(--accent); border: 3px solid var(--bg); box-shadow: 0 0 0 1px var(--accent), 0 0 14px rgba(0, 212, 255, 0.6);
-  }
-  input[type="range"]::-moz-range-thumb {
-    width: 16px; height: 16px; border-radius: 50%;
-    background: var(--accent); border: 3px solid var(--bg); box-shadow: 0 0 0 1px var(--accent), 0 0 14px rgba(0, 212, 255, 0.6);
-  }
-  input[type="range"]:focus-visible { outline: none; }
-  input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--accent), 0 0 18px rgba(0, 212, 255, 0.8); }
-
-  .derived { margin-top: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-  .chip {
-    background: var(--field); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px;
-  }
-  .chip .k { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
-  .chip .v { font-family: var(--mono); font-weight: 700; font-size: 1.05rem; }
-  .chip .v.fuel { color: var(--green); }
-  .chip .v.bad { color: var(--red); }
-  .chip.note { grid-column: 1 / -1; color: var(--text-2); font-size: 0.9rem; }
-  .chip.note.bad { color: var(--red); border-color: rgba(255, 92, 122, 0.35); }
-  .example-note { font-family: var(--mono); font-size: 12px; color: var(--amber); margin: -4px 0 10px; }
-
-  details { margin-top: 10px; }
-  details > summary {
-    cursor: pointer; font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--accent); min-height: 44px; display: flex; align-items: center; gap: 10px; list-style: none;
-  }
+  details.more { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 4px; }
+  details > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; min-height: 40px; font-weight: 600; font-size: 14px; color: var(--accent); }
   details > summary::-webkit-details-marker { display: none; }
-  details > summary::before {
-    content: "+"; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px;
-    border: 1px solid currentColor; font-size: 14px; line-height: 1; flex: none;
-  }
-  details[open] > summary::before { content: "−"; }
-  .subhead { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-3); margin: 14px 0 8px; padding-top: 12px; border-top: 1px dashed var(--border); }
+  details > summary::before { content: "›"; display: inline-block; width: 12px; font-size: 18px; line-height: 1; transition: transform .15s; }
+  details[open] > summary::before { transform: rotate(90deg); }
+  .group-title { font-size: 12px; font-weight: 600; color: var(--text-3); margin: 16px 0 8px; }
 
-  /* ── Answer ── */
-  .headline { font-family: var(--serif); font-weight: 400; font-size: clamp(1.7rem, 3vw, 2.3rem); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 6px; }
-  .answer-sub { color: var(--text-2); font-size: 0.95rem; margin-bottom: 0; }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 14px 0 4px; }
-  .stat {
-    background: var(--field); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px 10px;
-    position: relative; overflow: hidden;
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  button.btn {
+    font: 600 14px var(--sans); height: 40px; padding: 0 16px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border-hi); background: transparent; color: var(--text);
   }
-  .stat::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--c, var(--accent)); box-shadow: 0 0 16px var(--c, var(--accent)); }
-  .stat .k { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); }
-  .stat .v { font-family: var(--mono); font-weight: 700; font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.2; margin: 4px 0 0; color: var(--c, var(--accent)); text-shadow: 0 0 24px color-mix(in srgb, var(--c, var(--accent)) 35%, transparent); }
-  .stat .s { color: var(--text-3); font-size: 0.8rem; }
+  button.btn:hover { border-color: var(--accent); }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: #041018; }
+  .status { font-size: 13px; color: var(--green); min-height: 20px; margin-top: 8px; }
 
-  .race { margin: 14px 0 0; }
-  .race-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; margin-bottom: 4px; }
-  .race-head .sec-label { margin: 0; }
-  .lane { display: grid; grid-template-columns: minmax(140px, 180px) 1fr minmax(96px, 120px); gap: 4px 14px; align-items: center; padding: 9px 0; border-top: 1px solid var(--border); }
-  .lane:last-child { border-bottom: 1px solid var(--border); }
-  .lane .who { display: flex; gap: 10px; align-items: flex-start; }
-  .lane .who b { display: block; font-weight: 600; }
-  .lane .who small { display: block; color: var(--text-3); font-size: 0.78rem; line-height: 1.25; }
-  .track { height: 12px; border-radius: 7px; background: var(--field); border: 1px solid var(--border); position: relative; overflow: hidden; }
-  .fill {
-    position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 7px;
-    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 35%, transparent), var(--c));
-    box-shadow: 0 0 14px color-mix(in srgb, var(--c) 55%, transparent);
-    transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .fill.dashed { background: repeating-linear-gradient(90deg, var(--c) 0 10px, transparent 10px 16px); box-shadow: none; opacity: 0.8; }
-  .lane .when { text-align: right; }
-  .lane .when b { font-family: var(--mono); font-size: 0.95rem; display: block; }
-  .lane .when small { color: var(--text-3); font-size: 0.78rem; }
-  .lane .meta { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.85rem; color: var(--text-2); margin-top: -2px; }
-  .lane .meta .num { font-family: var(--mono); }
-  .lane .na { grid-column: 2 / -1; color: var(--text-2); font-size: 0.95rem; }
-  .tag { font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 6px; border: 1px solid; white-space: nowrap; }
-  .tag.better { color: var(--green); border-color: rgba(0, 229, 160, 0.4); background: rgba(0, 229, 160, 0.07); }
-  .tag.worse { color: var(--red); border-color: rgba(255, 92, 122, 0.4); background: rgba(255, 92, 122, 0.07); }
-  .tag.same { color: var(--text-2); border-color: var(--border-hi); }
-  .tag.base { color: var(--accent); border-color: rgba(0, 212, 255, 0.4); background: rgba(0, 212, 255, 0.07); }
-  .key { width: 18px; height: 0; border-top: 3px solid; flex: none; border-radius: 2px; margin-top: 0.7em; }
-  .key.dashed { border-top-style: dashed; }
-  .key.wide { border-top-width: 6px; opacity: 0.65; }
-  .verdict {
-    margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; font-size: 0.92rem;
-    background: rgba(0, 212, 255, 0.05); border: 1px solid rgba(0, 212, 255, 0.25); color: var(--text);
-  }
-  .verdict:empty { display: none; }
-  .verdict::before { content: "▸ BOTTOM LINE"; display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--accent); margin-bottom: 6px; }
-  .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 12px; padding: 14px 16px; margin: 14px 0; color: var(--text); }
-  .warn strong { color: var(--amber); }
-  .better { color: var(--good); font-weight: 600; }
-  .worse { color: var(--bad); font-weight: 600; }
+  .answer .kicker { font-size: 13px; color: var(--text-3); margin: 0 0 4px; }
+  .headline { font-family: var(--serif); font-weight: 400; font-size: 32px; line-height: 1.15; margin: 0 0 8px; }
+  .answer-sub { color: var(--text-2); max-width: 62ch; }
+  .summary { display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 16px 0 20px; padding: 16px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .summary div { min-width: 0; }
+  .summary .k { display: block; font-size: 13px; color: var(--text-3); }
+  .summary .v { font-family: var(--mono); font-size: 20px; font-weight: 600; }
+  .summary .v.cyan { color: var(--accent); }
+  .summary .v.green { color: var(--green); }
+
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  thead th { font-size: 12px; font-weight: 600; color: var(--text-3); padding-top: 0; }
+  tbody th { font-weight: 600; font-size: 14px; }
+  td { font-size: 14px; }
+  td.r, th.r { text-align: right; }
+  td .sub, th .sub { display: block; font-family: var(--sans); font-weight: 400; font-size: 12px; color: var(--text-3); }
+  .table-wrap { overflow-x: auto; }
+  .method { display: flex; align-items: center; gap: 10px; }
+  .swatch { width: 14px; height: 0; border-top: 3px solid; flex: none; border-radius: 2px; }
+  .swatch.dashed { border-top-style: dashed; }
+  .bar { height: 6px; border-radius: 3px; background: var(--field); margin-top: 6px; overflow: hidden; min-width: 80px; }
+  .bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--c); transition: width .7s cubic-bezier(.22, 1, .36, 1); }
+  .bar i.dashed { background: repeating-linear-gradient(90deg, var(--c) 0 6px, transparent 6px 10px); }
+  .better { color: var(--green); }
+  .worse { color: var(--red); }
   .same { color: var(--text-2); }
-  .sub { display: block; font-weight: 400; color: var(--text-3); font-size: 0.85rem; }
-
-  /* ── Breakdown ── */
-  .breakdown { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin-top: 8px; }
-  .bd { background: var(--field); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; border-top: 2px solid var(--c); }
-  .bd h3 { margin: 0 0 10px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); }
-  .bd-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px dashed var(--border); font-size: 0.9rem; }
-  .bd-row .num { font-family: var(--mono); font-weight: 600; white-space: nowrap; }
-  .bd-row .num.save { color: var(--green); }
-  .bd-row .num.cost { color: var(--red); }
-  .bd-row.total { border-bottom: 0; font-weight: 700; padding-top: 10px; }
-  .formula { font-family: var(--mono); color: var(--accent); background: var(--field); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+  .unavail { font-family: var(--sans); color: var(--text-2); font-size: 13px; }
+  .bottom-line { margin: 16px 0 0; color: var(--text); }
+  .warn { color: var(--amber); font-size: 14px; margin: 12px 0 0; }
+  .next { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 16px; font-size: 14px; }
+  .next a { font-weight: 600; text-decoration: none; }
+  .next a:hover { text-decoration: underline; }
 
   /* ── Chart ── */
-  .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 2px 0 6px; color: var(--text-2); font-size: 0.82rem; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 0 0 12px; color: var(--text-2); font-size: 13px; }
   .legend span { display: inline-flex; align-items: center; gap: 8px; }
-  .legend .key { margin-top: 0; }
   .chart { position: relative; }
   .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
   .chart text { fill: var(--text-3); font-size: 12px; font-family: var(--mono); }
   .chart .grid-line { stroke: var(--border); stroke-width: 1; }
   .chart .axis { stroke: var(--border-hi); stroke-width: 1; }
-  .chart .hair { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
-  .chart-note { color: var(--text-3); font-size: 0.875rem; margin: 10px 0 0; }
-  .tip {
-    position: absolute; pointer-events: none; z-index: 2;
-    background: var(--surface-2); border: 1px solid var(--border-hi); border-radius: 10px;
-    padding: 10px 12px; font-size: 0.85rem; box-shadow: 0 10px 30px rgba(0,0,0,.45); min-width: 200px;
-  }
-  .tip .t-title { color: var(--text-3); margin-bottom: 6px; font-family: var(--mono); font-size: 12px; }
+  .chart .hair { stroke: var(--text-2); stroke-width: 1; stroke-dasharray: 3 3; }
+  .chart-note { color: var(--text-3); font-size: 13px; margin: 8px 0 0; }
+  .tip { position: absolute; pointer-events: none; z-index: 2; background: var(--surface-2); border: 1px solid var(--border-hi); border-radius: 8px; padding: 8px 12px; font-size: 13px; min-width: 200px; }
+  .tip .t-title { color: var(--text-3); margin-bottom: 4px; }
   .tip .t-row { display: flex; align-items: center; gap: 8px; }
-  .tip .t-row .key { margin-top: 0; }
-  .tip .t-row strong { margin-left: auto; font-family: var(--mono); }
+  .tip .t-row strong { margin-left: auto; font-family: var(--mono); font-weight: 400; }
 
-  /* ── Tables ── */
-  table { border-collapse: collapse; width: 100%; }
-  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  thead th { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-3); font-weight: 600; }
-  tbody th { font-weight: 600; }
-  td { font-family: var(--mono); font-size: 0.85rem; }
-  tbody th { font-size: 0.9rem; }
-  td .sub { font-family: var(--sans); }
-  td.r, th.r { text-align: right; }
-  .table-wrap { overflow-x: auto; }
+  /* ── Why & risks ── */
+  .formula { font-family: var(--mono); color: var(--accent); }
+  .bd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px 40px; margin-top: 8px; }
+  .bd-grid h3 { margin-top: 8px; }
+  .bd-grid table td:last-child { text-align: right; font-family: var(--mono); white-space: nowrap; }
+  .bd-grid tr.total td { font-weight: 600; border-bottom: 0; }
+  .risks { margin: 0; padding-left: 20px; color: var(--text-2); }
+  .risks li { margin-bottom: 10px; }
+  .risks li::marker { color: var(--amber); }
 
-  /* ── Catch & learn ── */
-  .risks { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-  .risks li { background: var(--field); border: 1px solid var(--border); border-left: 3px solid var(--amber); border-radius: 8px; padding: 7px 12px; color: var(--text-2); font-size: 0.88rem; line-height: 1.4; }
-  .risks li strong { color: var(--text); }
-  ul.plain { padding-left: 1.2em; margin: 0; }
-  ul.plain li { margin: 0 0 10px; }
-  .faq details { border-top: 1px solid var(--border); margin: 0; }
-  .faq details:last-of-type { border-bottom: 1px solid var(--border); }
-  .faq summary { color: var(--text); font-family: var(--sans); font-size: 0.95rem; letter-spacing: 0; text-transform: none; padding: 2px 0; }
+  /* ── Learn ── */
+  .faq details { border-bottom: 1px solid var(--border); }
+  .faq details:first-of-type { border-top: 1px solid var(--border); }
+  .faq summary { color: var(--text); font-weight: 600; font-size: 15px; min-height: 48px; }
   .faq summary::before { color: var(--accent); }
-  .faq .a { padding: 0 0 12px 34px; color: var(--text-2); font-size: 0.92rem; }
+  .faq .a { padding: 0 0 16px 20px; color: var(--text-2); }
+  .faq .a ul { padding-left: 20px; margin: 0; }
+  .faq .a li { margin-bottom: 8px; }
 
-  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-  button {
-    font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em;
-    min-height: 44px; padding: 0 16px; border-radius: 10px; cursor: pointer;
-    border: 1px solid var(--border-hi); background: var(--surface-2); color: var(--text);
-    transition: border-color .15s, background .15s;
+  footer { max-width: 1200px; margin: 0 auto; padding: 16px 24px 32px; color: var(--text-3); font-size: 12px; border-top: 1px solid var(--border); }
+
+  /* ── Phone mini result bar ── */
+  .mini { display: none; }
+
+  @media (max-width: 900px) {
+    .compare { grid-template-columns: 1fr; gap: 24px; }
+    .compare .answer { order: -1; }
   }
-  button:hover { border-color: var(--accent); }
-  button.primary { background: var(--accent); color: #041018; border-color: var(--accent); font-weight: 700; box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
-  .status { color: var(--green); align-self: center; font-size: 0.9rem; font-family: var(--mono); }
-
-  footer { color: var(--text-3); font-size: 0.8rem; border-top: 1px solid var(--border); margin-top: 20px; padding-top: 12px; }
-
   @media (max-width: 640px) {
-    body { font-size: 14px; }
-    .hero { padding-top: 18px; }
-    .pills { display: none; }
-    .card { padding: 14px; border-radius: 12px; }
-    .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 12px; }
-    .field label { font-size: 11px; letter-spacing: 0.06em; }
-    .field .hint { display: none; }
-    .input span { padding: 0 8px; }
-    .input input:first-child { padding-left: 10px; }
-    .derived { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
-    .derived .chip:nth-child(3) { grid-column: 1 / -1; }
-    .chip .k { font-size: 10px; }
-    .chip .v { font-size: 0.95rem; }
-    .stats { grid-template-columns: 1fr; gap: 6px; }
-    .stat { display: grid; grid-template-columns: 1fr auto; align-items: baseline; padding: 8px 12px; }
-    .stat .v { margin: 0; font-size: 1.15rem; grid-column: 2; grid-row: 1; }
-    .stat .s { display: none; }
-    .lane .who small { display: none; }
-    .lane { padding: 8px 0; }
-    .headline { font-size: 1.6rem; }
-    .race-head .fine, table.stack tbody th .sub, #why > .fine { display: none; }
-    .risks li { font-size: 0.85rem; padding: 6px 10px; }
-    .lane { grid-template-columns: 1fr auto; }
-    .lane .track { grid-column: 1 / -1; grid-row: 2; }
-    .lane .meta, .lane .na { grid-column: 1 / -1; }
-    th, td { padding: 8px 6px; }
+    .topbar-inner { flex-direction: column; align-items: stretch; gap: 0; padding: 8px 16px 0; min-height: 0; }
+    .brand { font-size: 18px; }
+    .tabs { margin: 0 -16px; padding: 0 8px; }
+    .tab { padding: 12px 10px 11px; font-size: 14px; }
+    main { padding: 16px 16px 88px; }
+    .card { padding: 16px; }
+    .headline { font-size: 26px; }
+    h1 { font-size: 26px; }
+    .summary { gap: 8px 20px; }
+    .summary .v { font-size: 17px; }
     table.stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-    table.stack tr { display: block; padding: 12px 0; border-bottom: 1px solid var(--border); }
-    table.stack th, table.stack td { display: flex; justify-content: space-between; gap: 12px; border: 0; padding: 3px 0; text-align: right; }
+    table.stack tr { display: block; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    table.stack th, table.stack td { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border: 0; padding: 3px 0; text-align: right; }
     table.stack tbody th { display: block; text-align: left; padding-bottom: 6px; }
-    table.stack td::before { content: attr(data-label); color: var(--text-3); text-align: left; font-family: var(--sans); flex: none; white-space: nowrap; }
+    table.stack td::before { content: attr(data-label); color: var(--text-3); font-family: var(--sans); font-size: 13px; text-align: left; flex: none; }
     table.stack td .sub { display: inline; margin-left: 6px; }
-    .faq .a { padding-left: 0; }
+    table.stack td.barcell { display: block; }
+    table.stack td.barcell::before { content: none; }
+    table.stack td[colspan] { display: block; text-align: left; }
+    table.stack td[colspan]::before { content: none; }
+    .mini.show {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: rgba(17, 24, 39, 0.96); border-top: 1px solid var(--border-hi); font-size: 14px;
+    }
+    .mini b { font-family: var(--mono); color: var(--accent); }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .fill { transition: none; }
-    * { scroll-behavior: auto; }
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    details[open] > *:not(summary) { animation: fade .2s ease-out; }
-    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-    .hero > * { animation: rise .6s ease-out both; }
-    .hero > *:nth-child(4) { animation-delay: .05s; }
-    .hero > *:nth-child(5) { animation-delay: .1s; }
-    .hero > *:nth-child(6) { animation-delay: .15s; }
-    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-  }
+  @media (prefers-reduced-motion: reduce) { .bar i, details > summary::before { transition: none; } }
   @media print {
     :root { --bg: #fff; --surface: #fff; --field: #fff; --text: #000; --text-2: #222; --text-3: #444; --border: #bbb; }
-    body { background: #fff; }
-    .glow, .hero::before, .actions, .no-print, input[type="range"] { display: none !important; }
-    .card { break-inside: avoid; box-shadow: none; }
+    .topbar, .actions, .next, .mini { display: none !important; }
+    .page[hidden] { display: block !important; }
+    .card { break-inside: avoid; }
     details > *:not(summary) { display: block !important; }
   }
 </style>
 </head>
 <body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#tab=compare">Mortgage payoff, <em>straight math</em></a>
+    <nav class="tabs" role="tablist" aria-label="Pages">
+      <button class="tab" role="tab" id="tab-compare" aria-controls="page-compare" data-tab="compare">Compare</button>
+      <button class="tab" role="tab" id="tab-chart" aria-controls="page-chart" data-tab="chart">Chart</button>
+      <button class="tab" role="tab" id="tab-risks" aria-controls="page-risks" data-tab="risks">Why &amp; risks</button>
+      <button class="tab" role="tab" id="tab-learn" aria-controls="page-learn" data-tab="learn">Learn</button>
+    </nav>
+  </div>
+</header>
+
 <main>
-  <header class="hero">
-    <div class="glow a" aria-hidden="true"></div>
-    <div class="glow b" aria-hidden="true"></div>
-    <p class="eyebrow">Mortgage payoff · straight math</p>
-    <h1>What actually pays off your mortgage <em>faster?</em></h1>
-    <p class="lede">Extra payments, a HELOC (“velocity banking”), or an all-in-one loan: same paycheck, same bills, different routes. Plug in your numbers and watch them race.</p>
-    <div class="pills">
-      <span class="pill c"><span aria-hidden="true">✓</span> Same money in every scenario</span>
-      <span class="pill g"><span aria-hidden="true">✓</span> Real daily-interest math</span>
-      <span class="pill a"><span aria-hidden="true">✓</span> Your numbers never leave your browser</span>
-    </div>
-    <p class="fine">A homeowner's personal project, shared as-is. Educational estimates, not financial, tax, or legal advice.</p>
-  </header>
+  <!-- ══ Compare ══ -->
+  <section class="page" id="page-compare" role="tabpanel" aria-labelledby="tab-compare">
+    <div class="compare">
+      <div class="card inputs">
+        <h2>Your numbers</h2>
+        <p class="example-note" id="example-note">Example numbers are filled in. Replace them with yours.</p>
+        <form id="form" novalidate>
+          <div class="field">
+            <label for="balance">Mortgage balance</label>
+            <div class="input"><span>$</span><input id="balance" name="balance" inputmode="decimal" autocomplete="off"></div>
+          </div>
+          <div class="pair">
+            <div class="field">
+              <label for="rate">Interest rate</label>
+              <div class="input"><input id="rate" name="rate" inputmode="decimal" autocomplete="off"><span>%</span></div>
+            </div>
+            <div class="field">
+              <label for="yearsLeft">Years left</label>
+              <div class="input"><input id="yearsLeft" name="yearsLeft" inputmode="decimal" autocomplete="off"><span>yrs</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="homeValue">Home value</label>
+            <div class="input"><span>$</span><input id="homeValue" name="homeValue" inputmode="decimal" autocomplete="off"></div>
+          </div>
+          <div class="field">
+            <label for="income">Monthly take-home pay</label>
+            <div class="input"><span>$</span><input id="income" name="income" inputmode="decimal" autocomplete="off" aria-describedby="income-hint"></div>
+            <span class="hint" id="income-hint">After taxes, whole household.</span>
+          </div>
+          <div class="field">
+            <label for="spending">Monthly spending</label>
+            <div class="input"><span>$</span><input id="spending" name="spending" inputmode="decimal" autocomplete="off" aria-describedby="spending-hint"></div>
+            <span class="hint" id="spending-hint">Everything except mortgage principal &amp; interest.</span>
+          </div>
+        </form>
+        <div class="derived" id="derived" aria-live="polite"></div>
 
-  <div class="row two top">
-  <section class="card" aria-labelledby="h-inputs">
-    <p class="sec-label"><b>01</b> // your numbers</p>
-    <h2 id="h-inputs">Start with what you've got</h2>
-    <p class="example-note" id="example-note">▸ Example numbers loaded. Swap in yours.</p>
-    <form id="form" class="grid" novalidate>
-      <div class="field">
-        <label for="balance">Mortgage balance</label>
-        <div class="input"><span>$</span><input id="balance" name="balance" inputmode="decimal" autocomplete="off"></div>
-        <input type="range" data-for="balance" min="0" max="1500000" step="5000" aria-label="Mortgage balance slider">
-      </div>
-      <div class="field">
-        <label for="rate">Mortgage interest rate</label>
-        <div class="input"><input id="rate" name="rate" inputmode="decimal" autocomplete="off"><span>%</span></div>
-        <input type="range" data-for="rate" min="0" max="12" step="0.125" aria-label="Mortgage interest rate slider">
-      </div>
-      <div class="field">
-        <label for="yearsLeft">Years left on the loan</label>
-        <div class="input"><input id="yearsLeft" name="yearsLeft" inputmode="decimal" autocomplete="off"><span>years</span></div>
-        <input type="range" data-for="yearsLeft" min="1" max="40" step="1" aria-label="Years left slider">
-      </div>
-      <div class="field">
-        <label for="homeValue">Home value</label>
-        <div class="input"><span>$</span><input id="homeValue" name="homeValue" inputmode="decimal" autocomplete="off"></div>
-        <input type="range" data-for="homeValue" min="0" max="2500000" step="5000" aria-label="Home value slider">
-      </div>
-      <div class="field">
-        <label for="income">Monthly take-home pay</label>
-        <div class="input"><span>$</span><input id="income" name="income" inputmode="decimal" autocomplete="off" aria-describedby="income-hint"></div>
-        <input type="range" data-for="income" min="0" max="30000" step="100" aria-label="Monthly take-home pay slider">
-        <span class="hint" id="income-hint">After taxes, whole household combined.</span>
-      </div>
-      <div class="field">
-        <label for="spending">Monthly spending</label>
-        <div class="input"><span>$</span><input id="spending" name="spending" inputmode="decimal" autocomplete="off" aria-describedby="spending-hint"></div>
-        <input type="range" data-for="spending" min="0" max="30000" step="100" aria-label="Monthly spending slider">
-        <span class="hint" id="spending-hint">Everything except mortgage principal &amp; interest, including tax, insurance and other debts. Check 3 months of statements.</span>
-      </div>
-    </form>
-    <div class="derived num" id="derived" aria-live="polite"></div>
+        <details class="more" id="settings">
+          <summary>More settings</summary>
+          <p class="group-title">Your mortgage</p>
+          <div class="field">
+            <label for="payment">Actual principal &amp; interest payment</label>
+            <div class="input"><span>$</span><input id="payment" name="payment" inputmode="decimal" autocomplete="off" placeholder="Calculated for you"></div>
+            <span class="hint">Leave blank to calculate it. Don't include escrow.</span>
+          </div>
+          <div class="field">
+            <label for="payStrategy">How you're paid</label>
+            <div class="input"><select id="payStrategy" name="payStrategy">
+              <option value="semimonthly">Twice a month (1st &amp; 15th)</option>
+              <option value="biweekly">Every two weeks</option>
+              <option value="monthly">Once a month</option>
+            </select></div>
+          </div>
+          <div class="field">
+            <label for="spendTiming">Everyday spending</label>
+            <div class="input"><select id="spendTiming" name="spendTiming">
+              <option value="spread">Spread through the month</option>
+              <option value="card">Credit card, paid in full monthly</option>
+            </select></div>
+            <span class="hint">A credit card keeps cash in a HELOC longer.</span>
+          </div>
+          <p class="group-title">HELOC (second loan next to your mortgage)</p>
+          <div class="pair">
+            <div class="field">
+              <label for="helocRate">HELOC rate</label>
+              <div class="input"><input id="helocRate" name="helocRate" inputmode="decimal" autocomplete="off"><span>%</span></div>
+            </div>
+            <div class="field">
+              <label for="maxCltv">Max loan-to-value</label>
+              <div class="input"><input id="maxCltv" name="maxCltv" inputmode="decimal" autocomplete="off"><span>%</span></div>
+            </div>
+          </div>
+          <div class="pair">
+            <div class="field">
+              <label for="helocLimit">Credit limit</label>
+              <div class="input"><span>$</span><input id="helocLimit" name="helocLimit" inputmode="decimal" autocomplete="off" placeholder="Max"></div>
+            </div>
+            <div class="field">
+              <label for="chunk">Chunk size</label>
+              <div class="input"><span>$</span><input id="chunk" name="chunk" inputmode="decimal" autocomplete="off" placeholder="Auto"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="helocAnnualFee">HELOC annual fee</label>
+            <div class="input"><span>$</span><input id="helocAnnualFee" name="helocAnnualFee" inputmode="decimal" autocomplete="off"></div>
+          </div>
+          <p class="group-title">All-in-one loan (replaces your mortgage)</p>
+          <div class="pair">
+            <div class="field">
+              <label for="aioRate">All-in-one rate</label>
+              <div class="input"><input id="aioRate" name="aioRate" inputmode="decimal" autocomplete="off"><span>%</span></div>
+            </div>
+            <div class="field">
+              <label for="aioMaxLtv">Max loan-to-value</label>
+              <div class="input"><input id="aioMaxLtv" name="aioMaxLtv" inputmode="decimal" autocomplete="off"><span>%</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="aioCost">Cost to switch</label>
+            <div class="input"><span>$</span><input id="aioCost" name="aioCost" inputmode="decimal" autocomplete="off"></div>
+            <span class="hint">Refinance closing costs, often 2–5%. $0 if buying.</span>
+          </div>
+        </details>
 
-    <details id="settings">
-      <summary>Loan, HELOC &amp; all-in-one settings</summary>
-      <div class="subhead">Your mortgage</div>
-      <div class="grid">
-        <div class="field">
-          <label for="payment">Actual principal &amp; interest</label>
-          <div class="input"><span>$</span><input id="payment" name="payment" inputmode="decimal" autocomplete="off" placeholder="Calculated" aria-describedby="payment-hint"></div>
-          <span class="hint" id="payment-hint">Leave blank to calculate it from the balance, rate and years left. Don't include escrow.</span>
+        <div class="actions">
+          <button type="button" class="btn primary" id="copy-link">Copy link</button>
+          <button type="button" class="btn" id="reset">Reset</button>
         </div>
-        <div class="field">
-          <label for="payStrategy">How you're paid</label>
-          <div class="input"><select id="payStrategy" name="payStrategy">
-            <option value="semimonthly">Twice a month (1st &amp; 15th)</option>
-            <option value="biweekly">Every two weeks</option>
-            <option value="monthly">Once a month</option>
-          </select></div>
-        </div>
-        <div class="field">
-          <label for="spendTiming">Everyday spending</label>
-          <div class="input"><select id="spendTiming" name="spendTiming" aria-describedby="spend-hint">
-            <option value="spread">Spread through the month</option>
-            <option value="card">Credit card, paid in full monthly</option>
-          </select></div>
-          <span class="hint" id="spend-hint">Only matters for the HELOC and all-in-one: money that stays in the account longer lowers the balance you pay interest on.</span>
-        </div>
+        <div class="status" id="status" role="status"></div>
       </div>
-      <div class="subhead">HELOC (second loan next to your mortgage)</div>
-      <div class="grid">
-        <div class="field">
-          <label for="helocRate">HELOC interest rate</label>
-          <div class="input"><input id="helocRate" name="helocRate" inputmode="decimal" autocomplete="off"><span>%</span></div>
-          <input type="range" data-for="helocRate" min="0" max="15" step="0.125" aria-label="HELOC interest rate slider">
-          <span class="hint">Usually variable: prime rate plus a margin.</span>
-        </div>
-        <div class="field">
-          <label for="maxCltv">Max combined loan-to-value</label>
-          <div class="input"><input id="maxCltv" name="maxCltv" inputmode="decimal" autocomplete="off"><span>%</span></div>
-          <span class="hint">Mortgage + HELOC as a share of home value. 80% is common; some lenders allow 85–90%.</span>
-        </div>
-        <div class="field">
-          <label for="helocLimit">HELOC credit limit (optional)</label>
-          <div class="input"><span>$</span><input id="helocLimit" name="helocLimit" inputmode="decimal" autocomplete="off" placeholder="As much as equity allows"></div>
-        </div>
-        <div class="field">
-          <label for="chunk">Chunk size (optional)</label>
-          <div class="input"><span>$</span><input id="chunk" name="chunk" inputmode="decimal" autocomplete="off" placeholder="About 6 months of leftover" aria-describedby="chunk-hint"></div>
-          <span class="hint" id="chunk-hint">The amount moved from the HELOC onto the mortgage each time the HELOC is paid back to $0.</span>
-        </div>
-        <div class="field">
-          <label for="helocAnnualFee">HELOC annual fee</label>
-          <div class="input"><span>$</span><input id="helocAnnualFee" name="helocAnnualFee" inputmode="decimal" autocomplete="off"></div>
-        </div>
-      </div>
-      <div class="subhead">All-in-one loan (replaces your mortgage)</div>
-      <div class="grid">
-        <div class="field">
-          <label for="aioRate">All-in-one interest rate</label>
-          <div class="input"><input id="aioRate" name="aioRate" inputmode="decimal" autocomplete="off"><span>%</span></div>
-          <input type="range" data-for="aioRate" min="0" max="15" step="0.125" aria-label="All-in-one interest rate slider">
-          <span class="hint">Variable: an index plus the lender's margin.</span>
-        </div>
-        <div class="field">
-          <label for="aioMaxLtv">Max loan-to-value</label>
-          <div class="input"><input id="aioMaxLtv" name="aioMaxLtv" inputmode="decimal" autocomplete="off"><span>%</span></div>
-          <span class="hint">Ask the lender; requirements are often stricter than a regular mortgage.</span>
-        </div>
-        <div class="field">
-          <label for="aioCost">Cost to switch</label>
-          <div class="input"><span>$</span><input id="aioCost" name="aioCost" inputmode="decimal" autocomplete="off" aria-describedby="aio-cost-hint"></div>
-          <span class="hint" id="aio-cost-hint">Refinance closing costs, often 2–5% of the loan. Use $0 if you're comparing loans for a home you're buying.</span>
-        </div>
-      </div>
-    </details>
 
-    <div class="actions no-print">
-      <button type="button" class="primary" id="copy-link">Copy link to these numbers</button>
-      <button type="button" id="reset">Reset to example</button>
-      <span class="status" id="status" role="status"></span>
+      <div class="card answer" id="answer">
+        <p class="kicker">If you put all your leftover cash toward the debt</p>
+        <h1 class="headline" id="headline"></h1>
+        <p class="answer-sub" id="answer-sub"></p>
+        <div class="summary" id="summary"></div>
+        <div class="table-wrap">
+          <table id="compare-table" class="stack">
+            <thead><tr><th scope="col">Method</th><th scope="col">Debt-free</th><th scope="col" class="r">Interest &amp; fees</th><th scope="col" class="r">vs. extra payments</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="warn" id="answer-warn" hidden></p>
+        <p class="bottom-line" id="verdict"></p>
+        <div class="next">
+          <a href="#" data-goto="chart">See the chart →</a>
+          <a href="#" data-goto="risks">Why &amp; what's the catch →</a>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="card glowing sticky" aria-labelledby="h-answer" id="answer">
-    <p class="sec-label"><b>02</b> // your answer</p>
-    <h2 id="h-answer" class="headline"></h2>
-    <p id="answer-sub" class="answer-sub"></p>
-    <div id="answer-warn"></div>
-    <div class="stats" id="stats"></div>
-    <div class="race">
-      <div class="race-head"><p class="sec-label">▸ The race to $0</p><span class="fine">Bar length = time until debt-free</span></div>
-      <div id="race" role="list"></div>
+  <!-- ══ Chart ══ -->
+  <section class="page" id="page-chart" role="tabpanel" aria-labelledby="tab-chart" hidden>
+    <div class="card">
+      <h2>Total debt over time</h2>
+      <div class="legend" id="legend"></div>
+      <div class="chart" id="chart"></div>
+      <p class="chart-note" id="chart-note"></p>
     </div>
-    <p id="verdict" class="verdict"></p>
-  </section>
-
-  </div>
-
-  <div class="row two">
-  <section class="card" aria-labelledby="h-why" id="why">
-    <p class="sec-label"><b>03</b> // the higher-rate question</p>
-    <h2 id="h-why">How can a higher rate come out close?</h2>
-    <p>Interest is <span class="formula">rate × balance × time</span>. When your paycheck lands in a HELOC or all-in-one loan, the balance drops until bills go out, which is a small saving. But everything you borrowed at the higher rate costs more every day. Whichever effect is bigger wins:</p>
-    <div class="breakdown" id="breakdown"></div>
-    <p class="fine" style="margin-top:14px">The speed itself comes from your leftover cash, which extra payments use just as well. A HELOC or all-in-one loan changes how that cash moves, which is why the gap is usually small.</p>
-  </section>
-
-  <section class="card" aria-labelledby="h-chart">
-    <p class="sec-label"><b>04</b> // debt over time</p>
-    <h2 id="h-chart">Watch the balance fall</h2>
-    <div class="legend" id="legend"></div>
-    <div class="chart" id="chart"></div>
-    <p class="chart-note" id="chart-note"></p>
-    <details>
-      <summary>See the numbers by year</summary>
-      <div class="table-wrap"><table id="by-year" class="num"></table></div>
-    </details>
-  </section>
-
-  </div>
-
-  <section class="card" aria-labelledby="h-catch">
-    <p class="sec-label"><b>05</b> // what's the catch</p>
-    <h2 id="h-catch">Stress-test it before you trust it</h2>
-    <div id="rate-note"></div>
-    <div class="catch-grid">
-    <div>
-    <h3>If things change</h3>
-    <div class="table-wrap"><table id="stress" class="num stack"></table></div>
-    </div>
-    <div>
-    <h3>Risks to understand first</h3>
-    <ul class="risks">
-      <li><strong>Your home secures all of these loans.</strong> Fall behind on a HELOC or all-in-one loan and you can face foreclosure, just like with a mortgage.</li>
-      <li><strong>The rate moves.</strong> HELOC and all-in-one rates are variable and follow the prime rate. A fixed mortgage rate never changes.</li>
-      <li><strong>The line can be frozen or cut.</strong> Lenders may freeze or reduce a HELOC if your home's value drops a lot or your finances change. They must tell you within 3 business days after, not before.</li>
-      <li><strong>It only works if spending stays below pay, every month.</strong> Available credit is easy to spend, and spending it undoes the plan. With a credit card, one missed full payment costs more than the float saves.</li>
-      <li><strong>Setup is harder than it sounds.</strong> Most HELOCs can't take direct deposit or pay bills directly; pay usually lands in checking and gets moved over. In Texas, state law sets a $4,000 minimum per HELOC draw and bans card access, which makes chunking impractical there. All-in-one loans work differently, so ask the lender what's available in your state.</li>
-      <li><strong>Draw periods end.</strong> Many HELOCs let you borrow for about 10 years. After that, the line stops working as an account and required payments jump.</li>
-      <li><strong>Extra payments have a catch too.</strong> Money you prepay is locked in the house; you can't get it back without selling or borrowing. Keep an emergency fund before prepaying anything.</li>
-    </ul>
-    </div>
+    <div class="card">
+      <details>
+        <summary>Show the balance for every year</summary>
+        <div class="table-wrap"><table id="by-year"></table></div>
+      </details>
     </div>
   </section>
 
-  <section class="card faq" aria-labelledby="h-learn">
-    <p class="sec-label"><b>06</b> // learn more</p>
-    <h2 id="h-learn">The fine print, in plain English</h2>
-    <div class="faq-cols">
-    <details>
-      <summary>How each method works</summary>
-      <div class="a">
-        <p><strong>Current schedule:</strong> you pay the required payment. Leftover money stays in your bank account.</p>
-        <p><strong>Extra payments:</strong> every month you send your leftover money to the mortgage as extra principal. Simple, fixed-rate, no new loan. The money can't be taken back out.</p>
-        <p><strong>HELOC (“velocity banking” or “chunking”):</strong> you open a home equity line of credit next to your mortgage. You borrow a lump sum (a “chunk”) from it and pay it onto the mortgage principal. Your pay goes into the HELOC, bills come out of it, and the leftover pays the HELOC back down. When it reaches $0, you move the next chunk. You still make your regular mortgage payment.</p>
-        <p><strong>All-in-one loan:</strong> a first-lien HELOC replaces your mortgage entirely and doubles as your bank account. All income goes in, all spending comes out, and interest is charged daily on whatever you owe. There's no separate mortgage payment. Few lenders offer these.</p>
-      </div>
-    </details>
-    <details>
-      <summary>If the HELOC rate is higher, how can it ever save money?</summary>
-      <div class="a"><p>On its own, it can't. Move $20,000 from a 6.5% mortgage to an 8.5% HELOC and change nothing else, and you pay more. Any savings come from your pay sitting against the balance for a few days or weeks before bills go out. If that saves more than the extra rate costs, the HELOC comes out ahead. If not, it comes out behind. Section 03 shows both numbers for you.</p></div>
-    </details>
-    <details>
-      <summary>So what's the real benefit of a HELOC or all-in-one loan?</summary>
-      <div class="a"><p>Access to your money. With extra payments, cash you've prepaid is stuck in the house. With a HELOC or all-in-one loan, you can borrow it back if something goes wrong, as long as the line stays open. Whether that flexibility is worth the extra rate, fees and risk is your call. It isn't a dollar amount this tool can put on it.</p></div>
-    </details>
-    <details>
-      <summary>What if my HELOC or all-in-one rate is lower than my mortgage rate?</summary>
-      <div class="a"><p>Then the method can genuinely beat extra payments, because every borrowed dollar costs less than the mortgage dollar it replaces. This mostly happens with mortgages taken out at high rates. It's also the situation where refinancing into a lower fixed rate is worth pricing, since that savings is locked in.</p></div>
-    </details>
-    <details>
-      <summary>My mortgage rate is low. Should I pay it off early at all?</summary>
-      <div class="a"><p>Every extra dollar toward the mortgage earns exactly your mortgage rate, guaranteed. If your savings or investments reliably earn more than that, paying off early may not be the best use of the money. Investments carry risk, though, while mortgage payoff doesn't. This tool doesn't compare investing; it only compares ways to pay the mortgage.</p></div>
-    </details>
-    <details>
-      <summary>Is HELOC interest tax-deductible?</summary>
-      <div class="a"><p>Under current federal rules, home equity interest is generally deductible only when the borrowed money is used to buy, build, or substantially improve the home securing the loan, and only if you itemize. Whether paying down a mortgage with a HELOC qualifies depends on your situation. Ask a tax professional; this tool ignores taxes.</p></div>
-    </details>
-    <details>
-      <summary>What about recasting or refinancing to a shorter loan?</summary>
-      <div class="a"><p>A <strong>recast</strong> lowers your required payment after a large principal payment, but it doesn't save interest by itself. The savings came from the principal you paid. <strong>Refinancing to a 15- or 20-year loan</strong> usually gets a lower fixed rate and a guaranteed payoff date, but costs closing fees and raises the required payment. Both are worth asking a lender about alongside these options.</p></div>
-    </details>
-    <details>
-      <summary>Questions to ask a lender before opening a HELOC or all-in-one loan</summary>
-      <div class="a"><ul class="plain">
-        <li>Is interest charged daily on the average daily balance? Is the year 365 or 360 days?</li>
-        <li>Can my paycheck be deposited directly, and do deposits lower the balance the same day?</li>
-        <li>Can I pay bills directly from the line, or only through a linked checking account?</li>
-        <li>What's the rate today, what's the margin over prime, and is there a cap or floor?</li>
-        <li>What are the fees: opening, annual, per draw, inactivity, early closure?</li>
-        <li>How long is the draw period, and what happens to payments when it ends?</li>
-        <li>Under what conditions can you freeze or reduce my line?</li>
-        <li>What's the maximum loan-to-value, and what credit score do you require?</li>
-      </ul></div>
-    </details>
-    <details>
-      <summary>How this calculator works and what it assumes</summary>
-      <div class="a"><ul class="plain">
-        <li>All four methods use the same pay, the same spending and the same starting balance, so the only difference is how the money is routed.</li>
-        <li>Mortgage interest is charged monthly. HELOC and all-in-one interest is charged daily on the day's balance (rate ÷ 365) and added to the balance monthly, using real calendar months.</li>
-        <li>Pay arrives on the schedule you pick. Spending leaves evenly through the month, or on the 25th if you choose the credit card option. The mortgage payment leaves on the 1st.</li>
-        <li>The HELOC starts by moving one chunk onto the mortgage. After that, a new chunk moves each time the HELOC is paid back to $0, up to your credit limit. The limit is fixed when the line opens; it doesn't grow as your home appreciates.</li>
-        <li>Rates stay the same for the whole loan unless you change them. The stress test in section 05 shows what happens if they rise.</li>
-        <li>Taxes, investment returns, home appreciation, inflation and any change in pay over time are left out.</li>
-        <li>Compared with one lender's own all-in-one simulator, this tool came out a little more optimistic: 90 vs. 92 payments on the same inputs. The difference is how much credit each gives for pay sitting against the balance.</li>
-        <li>Your numbers stay in your browser. Nothing is sent anywhere.</li>
-      </ul></div>
-    </details>
+  <!-- ══ Why & risks ══ -->
+  <section class="page narrow" id="page-risks" role="tabpanel" aria-labelledby="tab-risks" hidden>
+    <div class="card" id="why">
+      <h2>How can a higher rate come out close?</h2>
+      <p>Interest is <span class="formula">rate × balance × time</span>. When your paycheck lands in a HELOC or all-in-one loan, the balance drops until bills go out. That saves a little. But everything you borrowed at the higher rate costs more every day. Whichever effect is bigger wins.</p>
+      <div class="bd-grid" id="breakdown"></div>
+      <p class="fine" style="margin:12px 0 0">The speed itself comes from your leftover cash, which extra payments use just as well. That's why the gap is usually small.</p>
+    </div>
+    <div class="card">
+      <h2>If things change</h2>
+      <div id="rate-note"></div>
+      <div class="table-wrap"><table id="stress" class="stack"></table></div>
+    </div>
+    <div class="card">
+      <h2>Risks to understand first</h2>
+      <ul class="risks">
+        <li><strong>Your home secures all of these loans.</strong> Fall behind on a HELOC or all-in-one loan and you can face foreclosure, just like with a mortgage.</li>
+        <li><strong>The rate moves.</strong> HELOC and all-in-one rates are variable and follow the prime rate. A fixed mortgage rate never changes.</li>
+        <li><strong>The line can be frozen or cut.</strong> Lenders may freeze or reduce a HELOC if your home's value drops a lot or your finances change. They must tell you within 3 business days after, not before.</li>
+        <li><strong>It only works if spending stays below pay, every month.</strong> Available credit is easy to spend, and spending it undoes the plan. With a credit card, one missed full payment costs more than the float saves.</li>
+        <li><strong>Setup is harder than it sounds.</strong> Most HELOCs can't take direct deposit or pay bills directly; pay usually lands in checking and gets moved over. In Texas, state law sets a $4,000 minimum per HELOC draw and bans card access, which makes chunking impractical there. All-in-one loans work differently, so ask the lender what's available in your state.</li>
+        <li><strong>Draw periods end.</strong> Many HELOCs let you borrow for about 10 years. After that, the line stops working as an account and required payments jump.</li>
+        <li><strong>Extra payments have a catch too.</strong> Money you prepay is locked in the house; you can't get it back without selling or borrowing. Keep an emergency fund before prepaying anything.</li>
+      </ul>
     </div>
   </section>
 
-  <footer>
-    <p>Built by a homeowner for personal use and shared as-is, with no warranty. These are educational estimates based on the numbers you enter and the assumptions listed above. They're not financial, tax, or legal advice or an offer of credit, and real results will differ. The author isn't a lender, broker or financial professional, isn't affiliated with any lender, and isn't paid for any mention. Confirm any decision with your lender's official disclosures and a licensed professional.</p>
-  </footer>
+  <!-- ══ Learn ══ -->
+  <section class="page reading" id="page-learn" role="tabpanel" aria-labelledby="tab-learn" hidden>
+    <div class="card faq">
+      <h2>The fine print, in plain English</h2>
+      <details>
+        <summary>How each method works</summary>
+        <div class="a">
+          <p><strong>Current schedule:</strong> you pay the required payment. Leftover money stays in your bank account.</p>
+          <p><strong>Extra payments:</strong> every month you send your leftover money to the mortgage as extra principal. Simple, fixed-rate, no new loan. The money can't be taken back out.</p>
+          <p><strong>HELOC (“velocity banking” or “chunking”):</strong> you open a home equity line of credit next to your mortgage. You borrow a lump sum (a “chunk”) from it and pay it onto the mortgage principal. Your pay goes into the HELOC, bills come out of it, and the leftover pays the HELOC back down. When it reaches $0, you move the next chunk. You still make your regular mortgage payment.</p>
+          <p><strong>All-in-one loan:</strong> a first-lien HELOC replaces your mortgage entirely and doubles as your bank account. All income goes in, all spending comes out, and interest is charged daily on whatever you owe. There's no separate mortgage payment. Few lenders offer these.</p>
+        </div>
+      </details>
+      <details>
+        <summary>If the HELOC rate is higher, how can it ever save money?</summary>
+        <div class="a"><p>On its own, it can't. Move $20,000 from a 6.5% mortgage to an 8.5% HELOC and change nothing else, and you pay more. Any savings come from your pay sitting against the balance for a few days or weeks before bills go out. If that saves more than the extra rate costs, the HELOC comes out ahead. If not, it comes out behind. The “Why &amp; risks” page shows both numbers for you.</p></div>
+      </details>
+      <details>
+        <summary>So what's the real benefit of a HELOC or all-in-one loan?</summary>
+        <div class="a"><p>Access to your money. With extra payments, cash you've prepaid is stuck in the house. With a HELOC or all-in-one loan, you can borrow it back if something goes wrong, as long as the line stays open. Whether that flexibility is worth the extra rate, fees and risk is your call. It isn't a dollar amount this tool can put on it.</p></div>
+      </details>
+      <details>
+        <summary>What if my HELOC or all-in-one rate is lower than my mortgage rate?</summary>
+        <div class="a"><p>Then the method can genuinely beat extra payments, because every borrowed dollar costs less than the mortgage dollar it replaces. This mostly happens with mortgages taken out at high rates. It's also the situation where refinancing into a lower fixed rate is worth pricing, since that savings is locked in.</p></div>
+      </details>
+      <details>
+        <summary>My mortgage rate is low. Should I pay it off early at all?</summary>
+        <div class="a"><p>Every extra dollar toward the mortgage earns exactly your mortgage rate, guaranteed. If your savings or investments reliably earn more than that, paying off early may not be the best use of the money. Investments carry risk, though, while mortgage payoff doesn't. This tool doesn't compare investing; it only compares ways to pay the mortgage.</p></div>
+      </details>
+      <details>
+        <summary>Is HELOC interest tax-deductible?</summary>
+        <div class="a"><p>Under current federal rules, home equity interest is generally deductible only when the borrowed money is used to buy, build, or substantially improve the home securing the loan, and only if you itemize. Whether paying down a mortgage with a HELOC qualifies depends on your situation. Ask a tax professional; this tool ignores taxes.</p></div>
+      </details>
+      <details>
+        <summary>What about recasting or refinancing to a shorter loan?</summary>
+        <div class="a"><p>A <strong>recast</strong> lowers your required payment after a large principal payment, but it doesn't save interest by itself. The savings came from the principal you paid. <strong>Refinancing to a 15- or 20-year loan</strong> usually gets a lower fixed rate and a guaranteed payoff date, but costs closing fees and raises the required payment. Both are worth asking a lender about alongside these options.</p></div>
+      </details>
+      <details>
+        <summary>Questions to ask a lender before opening a HELOC or all-in-one loan</summary>
+        <div class="a"><ul>
+          <li>Is interest charged daily on the average daily balance? Is the year 365 or 360 days?</li>
+          <li>Can my paycheck be deposited directly, and do deposits lower the balance the same day?</li>
+          <li>Can I pay bills directly from the line, or only through a linked checking account?</li>
+          <li>What's the rate today, what's the margin over prime, and is there a cap or floor?</li>
+          <li>What are the fees: opening, annual, per draw, inactivity, early closure?</li>
+          <li>How long is the draw period, and what happens to payments when it ends?</li>
+          <li>Under what conditions can you freeze or reduce my line?</li>
+          <li>What's the maximum loan-to-value, and what credit score do you require?</li>
+        </ul></div>
+      </details>
+      <details>
+        <summary>How this calculator works and what it assumes</summary>
+        <div class="a"><ul>
+          <li>All four methods use the same pay, the same spending and the same starting balance, so the only difference is how the money is routed.</li>
+          <li>Mortgage interest is charged monthly. HELOC and all-in-one interest is charged daily on the day's balance (rate ÷ 365) and added to the balance monthly, using real calendar months.</li>
+          <li>Pay arrives on the schedule you pick. Spending leaves evenly through the month, or on the 25th if you choose the credit card option. The mortgage payment leaves on the 1st.</li>
+          <li>The HELOC starts by moving one chunk onto the mortgage. After that, a new chunk moves each time the HELOC is paid back to $0, up to your credit limit. The limit is fixed when the line opens; it doesn't grow as your home appreciates.</li>
+          <li>Rates stay the same for the whole loan unless you change them. The “If things change” table shows what happens if they rise.</li>
+          <li>Taxes, investment returns, home appreciation, inflation and any change in pay over time are left out.</li>
+          <li>Compared with one lender's own all-in-one simulator, this tool came out a little more optimistic: 90 vs. 92 payments on the same inputs. The difference is how much credit each gives for pay sitting against the balance.</li>
+          <li>Your numbers stay in your browser. Nothing is sent anywhere.</li>
+        </ul></div>
+      </details>
+    </div>
+  </section>
 </main>
+
+<footer>
+  Built by a homeowner for personal use and shared as-is, with no warranty. Educational estimates based on your inputs and the assumptions on the Learn page; not financial, tax, or legal advice or an offer of credit. Real results will differ. The author isn't a lender, broker or financial professional and isn't affiliated with or paid by any lender. Confirm any decision with your lender's official disclosures and a licensed professional.
+</footer>
+
+<div class="mini" id="mini" aria-hidden="true"></div>
+
 <script src="src/engine.js"></script>
 <script src="src/app.js"></script>
 </body>
